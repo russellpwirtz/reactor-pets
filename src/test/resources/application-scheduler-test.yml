@@ -1,12 +1,13 @@
-# Test Configuration for Reactor Pets
-# This configuration is used when running integration tests
+# Scheduler Test Configuration
+# This configuration is used when running TimeTickSchedulerTest
+# Inherits most settings from application-test.yml but enables the scheduler
 
 spring:
   application:
-    name: reactor-pets-test
+    name: reactor-pets-scheduler-test
 
-# Axon Configuration for Tests
-# Use in-memory event store for tests to avoid event replay issues
+# Axon Configuration for Scheduler Tests
+# Use in-memory event store to avoid event replay issues
 axon:
   axonserver:
     enabled: false  # Disable Axon Server for tests

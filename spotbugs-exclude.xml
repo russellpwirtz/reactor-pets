@@ -57,4 +57,16 @@
     <Match>
         <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
     </Match>
+
+    <!-- Axon aggregates initialize fields in event sourcing handlers, not constructors -->
+    <Match>
+        <Class name="~.*\.aggregate\..*"/>
+        <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+    </Match>
+
+    <!-- Axon sagas initialize fields in saga event handlers, not constructors -->
+    <Match>
+        <Class name="~.*\.saga\..*"/>
+        <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+    </Match>
 </FindBugsFilter>

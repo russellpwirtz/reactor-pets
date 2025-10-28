@@ -13,12 +13,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
+@Profile("!test")
 @Slf4j
 @RequiredArgsConstructor
 public class TimeTickScheduler {
@@ -33,7 +35,7 @@ public class TimeTickScheduler {
     log.info("Starting reactive time flow scheduler (tick every 10 seconds)");
 
     subscription =
-        Flux.interval(Duration.ofSeconds(10))
+        Flux.interval(Duration.ofSeconds(10), Duration.ofSeconds(10))
             .doOnNext(tick -> log.debug("Time tick #{} triggered", tickCounter.get()))
             .flatMap(tick -> queryForAlivePets())
             .flatMap(this::sendTimeTick)

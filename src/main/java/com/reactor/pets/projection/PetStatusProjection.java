@@ -1,8 +1,10 @@
 package com.reactor.pets.projection;
 
+import com.reactor.pets.aggregate.EvolutionPath;
 import com.reactor.pets.event.PetCleanedEvent;
 import com.reactor.pets.event.PetCreatedEvent;
 import com.reactor.pets.event.PetDiedEvent;
+import com.reactor.pets.event.PetEvolvedEvent;
 import com.reactor.pets.event.PetFedEvent;
 import com.reactor.pets.event.PetHealthDeterioratedEvent;
 import com.reactor.pets.event.PetPlayedWithEvent;
@@ -42,6 +44,7 @@ public class PetStatusProjection {
     view.setHappiness(70);
     view.setHealth(100);
     view.setStage(com.reactor.pets.aggregate.PetStage.EGG);
+    view.setEvolutionPath(EvolutionPath.UNDETERMINED);
     view.setAlive(true);
     view.setAge(0);
     view.setTotalTicks(0);
@@ -115,6 +118,29 @@ public class PetStatusProjection {
                   view.getName(),
                   event.getHealthIncrease(),
                   newHealth);
+            });
+  }
+
+  @EventHandler
+  @Transactional
+  public void on(PetEvolvedEvent event) {
+    log.debug("Processing PetEvolvedEvent for petId: {}", event.petId());
+
+    petStatusRepository
+        .findById(event.petId())
+        .ifPresent(
+            view -> {
+              view.setStage(event.newStage());
+              view.setEvolutionPath(event.evolutionPath());
+              view.setLastUpdated(event.timestamp());
+              petStatusRepository.save(view);
+              log.info(
+                  "Pet {} evolved from {} to {} with {} path. Reason: {}",
+                  view.getName(),
+                  event.oldStage(),
+                  event.newStage(),
+                  event.evolutionPath(),
+                  event.evolutionReason());
             });
   }
 

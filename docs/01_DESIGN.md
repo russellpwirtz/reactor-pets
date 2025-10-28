@@ -30,10 +30,10 @@
 
 ## Current Project Status
 
-**Active Phase:** Phase 3 Complete - Ready for Phase 4
+**Active Phase:** Phase 4 Complete - Ready for Phase 5
 
 **Build Status:** ✅ All checks passing (Checkstyle, SpotBugs, tests)
-**Test Suite:** 73 tests passing (14 new time system tests)
+**Test Suite:** 102 tests passing (29 new evolution system tests)
 
 **Available Commands:**
 - `create <name> <type>` - Create new pet (DOG, CAT, or DRAGON)
@@ -46,7 +46,7 @@
 - `help` - Display command reference
 - `exit` - Terminate application
 
-**Next Steps:** Proceed with Phase 4 (Evolution System & Pet Stages)
+**Next Steps:** Proceed with Phase 5 (Multiple Pets & Statistics Dashboard)
 
 ---
 
@@ -97,58 +97,22 @@
 
 ---
 
-## Phase 4: Evolution System & Pet Stages
+## Phase 4: Evolution System & Pet Stages ✅ COMPLETED
 
 **Goal:** Pets evolve through stages based on age and care quality, implementing Saga pattern.
 
-### Deliverables
-1. **Evolution Saga**
-   ```java
-   @Saga
-   class PetEvolutionSaga {
-     @StartingSagaEventHandler(associationProperty = "petId")
-     void on(PetCreatedEvent event) { /* start tracking */ }
-     
-     @SagaEventHandler(associationProperty = "petId")
-     void on(TimePassedEvent event) {
-       // Check if evolution criteria met
-       // Dispatch EvolveCommand if yes
-     }
-     
-     @EndingEventHandler
-     void on(PetEvolvedEvent event) { /* end saga or continue tracking */ }
-   }
-   ```
-
-2. **Evolution Criteria**
-   - **EGG → BABY:** Age >= 5 (automatic)
-   - **BABY → TEEN:** Age >= 20, average happiness > 50
-   - **TEEN → ADULT:** Age >= 50, average health > 60, average happiness > 60
-   - Track care quality in saga state (rolling average of last 50 ticks)
-
-3. **New Command & Event**
-   - `EvolvePetCommand(petId, newStage, evolutionReason)` → `PetEvolvedEvent(petId, oldStage, newStage, evolutionPath, timestamp)`
-
-4. **Evolution Paths**
-   - Good care → "Healthy" variant (higher base stats)
-   - Poor care → "Neglected" variant (lower base stats)
-   - Store evolution path in aggregate: `private EvolutionPath evolutionPath`
-
-5. **Stat Adjustments on Evolution**
-   - When evolving, adjust max caps and degradation rates
-   - Adults: hunger increases slower (+2/tick vs +3), happiness more stable
-   - Neglected path: faster degradation throughout life
-
-6. **CLI Features**
-   - `status` shows stage and evolution path
-   - ASCII art per stage/type combination (simple text art)
-   - Evolution announcement message when it happens
-
-### Technical Notes
-- Saga maintains association with petId
-- Use `@StartingSagaEventHandler` and `@SagaEventHandler`
-- Saga state stores: petId, currentStage, careHistory[]
-- Query projection for care quality metrics
+### Completed Features
+- PetEvolutionSaga tracks pet care quality and triggers evolution at age milestones
+- Evolution stages: EGG → BABY → TEEN → ADULT
+- Evolution paths: HEALTHY (good care) vs NEGLECTED (poor care)
+- Evolution criteria:
+  - **EGG → BABY:** Age >= 5 (automatic)
+  - **BABY → TEEN:** Age >= 20 with happiness check
+  - **TEEN → ADULT:** Age >= 50 with health/happiness checks
+- Stage-based stat degradation (adults degrade slower, neglected path degrades faster)
+- EvolvePetCommand and PetEvolvedEvent for evolution handling
+- ASCII art for different pet types and stages displayed in CLI
+- Status command shows current stage, evolution path, and ASCII art
 
 ---
 
@@ -426,29 +390,26 @@
 
 ## Data Model Summary
 
-### Aggregates
+### Current Aggregates (Phase 1-4)
 - **Pet:** petId, name, type, hunger, happiness, health, age, stage, evolutionPath, isAlive, totalTicks
+
+### Current Commands (Phase 1-4)
+- CreatePetCommand, FeedPetCommand, PlayWithPetCommand, CleanPetCommand
+- TimeTickCommand, EvolvePetCommand
+
+### Current Events (Phase 1-4)
+- PetCreatedEvent, PetFedEvent, PetPlayedWithEvent, PetCleanedEvent
+- TimePassedEvent, PetHealthDeterioratedEvent, PetDiedEvent
+- PetEvolvedEvent
+
+### Current Projections (Phase 1-4)
+- PetStatusProjection (current state with JPA persistence)
+- PetHistoryProjection (event list from EventStore)
+
+### Future Additions (Phase 5+)
 - **Inventory:** inventoryId, items: Map<ItemType, Integer>
 - **PlayerAchievements:** playerId, unlockedAchievements: Set<Achievement>
-
-### Commands (Examples)
-- CreatePetCommand, FeedPetCommand, PlayWithPetCommand, CleanPetCommand
-- TimeTickCommand, EvolvePetCommand, GiveMedicineCommand
-- AddItemCommand, UseItemCommand
-- PlayGuessGameCommand, UnlockAchievementCommand
-
-### Events (Examples)
-- PetCreatedEvent, PetFedEvent, PetPlayedWithEvent, TimePassedEvent
-- PetEvolvedEvent, PetDiedEvent, PetBecameSickEvent
-- ItemAddedEvent, ItemUsedEvent
-- AchievementUnlockedEvent
-
-### Projections
-- PetStatusProjection (current state)
-- PetHistoryProjection (event list)
-- StatisticsProjection (aggregates across all pets)
-- InventoryProjection (current items)
-- AchievementProjection (unlocked achievements)
+- Additional commands, events, and projections per phase
 
 ---
 

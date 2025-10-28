@@ -2,12 +2,14 @@ package com.reactor.pets.aggregate;
 
 import com.reactor.pets.command.CleanPetCommand;
 import com.reactor.pets.command.CreatePetCommand;
+import com.reactor.pets.command.EvolvePetCommand;
 import com.reactor.pets.command.FeedPetCommand;
 import com.reactor.pets.command.PlayWithPetCommand;
 import com.reactor.pets.command.TimeTickCommand;
 import com.reactor.pets.event.PetCleanedEvent;
 import com.reactor.pets.event.PetCreatedEvent;
 import com.reactor.pets.event.PetDiedEvent;
+import com.reactor.pets.event.PetEvolvedEvent;
 import com.reactor.pets.event.PetFedEvent;
 import com.reactor.pets.event.PetHealthDeterioratedEvent;
 import com.reactor.pets.event.PetPlayedWithEvent;
@@ -32,6 +34,7 @@ public class Pet {
   private int happiness; // 0-100
   private int health; // 0-100
   private PetStage stage;
+  private EvolutionPath evolutionPath;
   private boolean isAlive;
   private int age; // Age in units (every 10 ticks = 1 age)
   private int totalTicks; // Total time ticks elapsed
@@ -106,6 +109,31 @@ public class Pet {
         new PetCleanedEvent(command.getPetId(), healthIncrease, Instant.now()));
   }
 
+  @CommandHandler
+  public void handle(EvolvePetCommand command) {
+    // Business rules validation
+    if (!isAlive) {
+      throw new IllegalStateException("Cannot evolve a dead pet");
+    }
+    if (command.newStage() == null) {
+      throw new IllegalArgumentException("New stage cannot be null");
+    }
+    if (command.newStage().ordinal() <= this.stage.ordinal()) {
+      throw new IllegalStateException(
+          "Cannot evolve to a stage lower than or equal to current stage");
+    }
+
+    // Apply event
+    AggregateLifecycle.apply(
+        new PetEvolvedEvent(
+            command.petId(),
+            this.stage,
+            command.newStage(),
+            command.evolutionPath(),
+            command.evolutionReason(),
+            Instant.now()));
+  }
+
   @EventSourcingHandler
   public void on(PetCreatedEvent event) {
     this.petId = event.getPetId();
@@ -115,6 +143,7 @@ public class Pet {
     this.happiness = 70;
     this.health = 100;
     this.stage = PetStage.EGG;
+    this.evolutionPath = EvolutionPath.UNDETERMINED;
     this.isAlive = true;
     this.age = 0;
     this.totalTicks = 0;
@@ -137,6 +166,12 @@ public class Pet {
     this.health = Math.min(100, this.health + event.getHealthIncrease());
   }
 
+  @EventSourcingHandler
+  public void on(PetEvolvedEvent event) {
+    this.stage = event.newStage();
+    this.evolutionPath = event.evolutionPath();
+  }
+
   @CommandHandler
   public void handle(TimeTickCommand command) {
     // Ignore if pet is dead
@@ -149,9 +184,24 @@ public class Pet {
       return;
     }
 
-    // Calculate stat changes
-    int hungerIncrease = Math.min(3, 100 - this.hunger);
-    int happinessDecrease = Math.min(2, this.happiness);
+    // Calculate stat changes based on stage and evolution path
+    int baseHungerIncrease = 3;
+    int baseHappinessDecrease = 2;
+
+    // Adults have slower degradation
+    if (this.stage == PetStage.ADULT) {
+      baseHungerIncrease = 2;
+      baseHappinessDecrease = 1;
+    }
+
+    // Neglected path has faster degradation (50% increase)
+    if (this.evolutionPath == EvolutionPath.NEGLECTED) {
+      baseHungerIncrease = (int) Math.ceil(baseHungerIncrease * 1.5);
+      baseHappinessDecrease = (int) Math.ceil(baseHappinessDecrease * 1.5);
+    }
+
+    int hungerIncrease = Math.min(baseHungerIncrease, 100 - this.hunger);
+    int happinessDecrease = Math.min(baseHappinessDecrease, this.happiness);
 
     // Every 10 ticks = 1 age unit
     int ageIncrease = ((totalTicks + 1) % 10 == 0) ? 1 : 0;

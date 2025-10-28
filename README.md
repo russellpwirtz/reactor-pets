@@ -1,6 +1,6 @@
 # Reactor Pets - Virtual Pet (Tamagotchi)
 
-A virtual pet application built with Axon Framework 4.x and Project Reactor, demonstrating Event Sourcing, CQRS, and reactive programming patterns.
+A virtual pet application built with Axon Framework 4.x and Project Reactor, demonstrating Event Sourcing, CQRS, Saga pattern, and reactive programming.
 
 ## Technology Stack
 
@@ -12,19 +12,20 @@ A virtual pet application built with Axon Framework 4.x and Project Reactor, dem
 - **Build**: Maven
 - **Code Quality**: Spotless, Checkstyle, SpotBugs, JaCoCo
 
-## Phase 3 Complete ✅
+## Phase 4 Complete ✅
 
-Current features:
-- Pet aggregate with event sourcing (create, feed, play, clean)
-- **Reactive time system with automatic stat degradation** (NEW)
-- **Health deterioration when stats are critical** (NEW)
-- **Pet death mechanic when health reaches zero** (NEW)
-- **Visual indicators for critical stats** (NEW)
+**Current features:**
+- Pet lifecycle with event sourcing (create, feed, play, clean)
+- Reactive time system with automatic stat degradation
+- Health deterioration and death mechanics
+- **Pet evolution system with saga pattern** (NEW)
+- **Evolution stages: EGG → BABY → TEEN → ADULT** (NEW)
+- **Evolution paths: HEALTHY vs NEGLECTED based on care** (NEW)
+- **ASCII art for different pet types and stages** (NEW)
 - JPA persistence with H2 database for projections
 - Event history queries via EventStore
-- Interactive CLI with list and history commands
-- Docker-based Axon Server
-- 73 passing tests with comprehensive time system coverage
+- Interactive CLI
+- **102 passing tests** with comprehensive coverage
 
 ## Prerequisites
 
@@ -45,169 +46,92 @@ Verify Axon Server is running at http://localhost:8024 (GUI) and localhost:8124 
 ### 2. Build & Run
 
 ```bash
-# Build (skip tests for faster startup)
+# Build
 mvn clean package -DskipTests
 
 # Run the CLI application
 mvn spring-boot:run
 ```
 
-**Note:** The CLI requires an interactive terminal - run the JAR directly, not through Maven.
-
 ## Testing
 
 ```bash
-# Run all tests (42 tests covering aggregates, projections, and integration)
+# Run all tests (102 tests)
 mvn test
 
-# Run tests with coverage report
+# Run with coverage report
 mvn verify
-# View coverage report: target/site/jacoco/index.html
 
-# Run specific test class
-mvn test -Dtest=PetAggregateTest
+# View coverage: target/site/jacoco/index.html
 ```
-
-**Test Suite:** 73 tests (aggregate, projection, time system, integration)
 
 ## Development Workflow
 
 ```bash
-# Format code (before committing)
+# Format code
 mvn spotless:apply
 
-# Run all checks (formatting, checkstyle, spotbugs, tests)
+# Run all checks
 mvn clean verify
 ```
 
-**Quality Tools:** Spotless (formatter), Checkstyle (style), SpotBugs (static analysis), JaCoCo (coverage)
-
-## Usage
-
-### Available Commands
+## CLI Commands
 
 ```
-create <name> <type>     - Create a new pet (types: DOG, CAT, DRAGON)
-feed <petId>             - Feed your pet (reduces hunger by 20)
-play <petId>             - Play with your pet (increases happiness by 15, increases hunger by 5)
-clean <petId>            - Clean your pet (increases health by 10)
-status <petId>           - Display current pet status
-list                     - List all pets
-history <petId> [limit]  - Show event history for a pet (default 10, max 50)
-help                     - Show this help message
-exit                     - Exit the application
-```
-
-### Example Session
-
-```
-> create Fluffy CAT
-
-Pet created successfully!
-Pet ID: 8f3e4d2a-1b9c-4e7f-a6d5-9c8b7a6f5e4d
-Name: Fluffy
-Type: CAT
-
-Use 'status 8f3e4d2a-1b9c-4e7f-a6d5-9c8b7a6f5e4d' to check your pet's status.
-
-> status 8f3e4d2a-1b9c-4e7f-a6d5-9c8b7a6f5e4d
-
-Pet Status:
------------
-ID: 8f3e4d2a-1b9c-4e7f-a6d5-9c8b7a6f5e4d
-Name: Fluffy
-Type: CAT
-Stage: EGG
-Status: Alive
-
-Stats:
-  Hunger: 30/100
-  Happiness: 70/100
-  Health: 100/100
-
-> feed 8f3e4d2a-1b9c-4e7f-a6d5-9c8b7a6f5e4d
-
-Pet fed successfully!
-Hunger reduced by 20
-
-Pet Status:
------------
-...
-Stats:
-  Hunger: 10/100
-  ...
+create <name> <type>     - Create a new pet (DOG, CAT, DRAGON)
+feed <petId>             - Feed your pet
+play <petId>             - Play with your pet
+clean <petId>            - Clean your pet
+status <petId>           - Display current pet status (shows stage, stats, ASCII art)
+list                     - List all alive pets
+history <petId> [limit]  - Show event history
+help                     - Show help
+exit                     - Exit
 ```
 
 ## Architecture
 
-Built using **Event Sourcing** and **CQRS** patterns:
+Built with **Event Sourcing**, **CQRS**, and **Saga** patterns:
 
-- **Aggregate:** `Pet` - write model enforcing business rules
-- **Commands:** `CreatePetCommand`, `FeedPetCommand`, `PlayWithPetCommand`, `CleanPetCommand`
-- **Events:** `PetCreatedEvent`, `PetFedEvent`, `PetPlayedWithEvent`, `PetCleanedEvent`
-- **Projections:**
-  - `PetStatusProjection` - JPA-persisted read model (H2)
-  - `PetHistoryProjection` - event history from EventStore
-- **Queries:** `GetPetStatusQuery`, `GetAllPetsQuery`, `GetPetHistoryQuery`
+- **Aggregates:** `Pet` (write model)
+- **Commands:** Create, Feed, Play, Clean, Evolve, TimeTick
+- **Events:** PetCreated, PetFed, PetPlayedWith, PetCleaned, TimePassed, PetEvolved, PetDied
+- **Projections:** PetStatusProjection (JPA), PetHistoryProjection (EventStore)
+- **Saga:** PetEvolutionSaga (coordinates evolution based on age and care)
+- **Reactive:** TimeTickScheduler (Flux.interval for stat degradation)
 
-**Business Rules:** Hunger/Happiness/Health 0-100, new pets start as EGG (hunger=30, happiness=70, health=100)
+**Core Features:**
+- Event sourcing for complete pet history
+- Reactive time system for automatic stat changes
+- Saga pattern for multi-step evolution process
+- Evolution paths determined by care quality
+- Stage-based stat degradation rates
 
-See `docs/01_DESIGN.md` for detailed architecture and future phases.
-
-## Project Structure
-
-```
-src/main/java/com/reactor/pets/
-├── aggregate/
-│   ├── Pet.java          # Event-sourced aggregate
-│   ├── PetType.java      # Enum: DOG, CAT, DRAGON
-│   └── PetStage.java     # Enum: EGG, BABY, TEEN, ADULT
-├── command/
-│   ├── CreatePetCommand.java
-│   ├── FeedPetCommand.java
-│   ├── PlayWithPetCommand.java
-│   └── CleanPetCommand.java
-├── event/
-│   ├── PetCreatedEvent.java
-│   ├── PetFedEvent.java
-│   ├── PetPlayedWithEvent.java
-│   └── PetCleanedEvent.java
-├── query/
-│   ├── GetPetStatusQuery.java
-│   ├── GetAllPetsQuery.java
-│   ├── GetPetHistoryQuery.java
-│   ├── PetStatusView.java        # JPA entity
-│   ├── PetStatusRepository.java
-│   └── PetEventDto.java
-├── projection/
-│   ├── PetStatusProjection.java  # JPA-backed projection
-│   └── PetHistoryProjection.java # EventStore-backed projection
-├── PetCliRunner.java              # CLI interface
-└── ReactorPetsApplication.java    # Main Spring Boot application
-```
-
-## Axon Server UI
-
-View events and system state at http://localhost:8024:
-- Navigate to "Search" → "Event Processor Browser" to view all pet events
-- Inspect event payloads, metadata, and aggregate state
-
-## Troubleshooting
-
-- **Connection warnings:** `NOT_FOUND: [AXONIQ-1302]` warnings are harmless - Axon Server will auto-retry
-- **CLI not responding:** Run the JAR directly in an interactive terminal (not through Maven or background)
+See `docs/01_DESIGN.md` for phase roadmap and future features.
 
 ## What You'll Learn
 
-This project demonstrates:
-- **Event Sourcing** - Pet state derived from immutable event stream
-- **CQRS** - Separate command (write) and query (read) models
-- **Axon Framework** - Aggregates, command handlers, event handlers, query handlers, EventStore
-- **JPA Projections** - Persistent read models with Spring Data JPA
-- **Domain-Driven Design** - Aggregates, commands, events, projections
-- **Reactive Programming** - Project Reactor (coming in Phase 3)
+- **Event Sourcing** - State derived from immutable event streams
+- **CQRS** - Separate command and query models
+- **Saga Pattern** - Coordinating long-running processes
+- **Axon Framework** - Aggregates, commands, events, sagas, projections
+- **Project Reactor** - Reactive programming with Flux/Mono
+- **Domain-Driven Design** - Bounded contexts, aggregates, domain events
 
-See `docs/01_DESIGN.md` for 9 planned phases including: reactive time system, pet evolution, sagas, inventory, mini-games, and REST API.
+## Troubleshooting
+
+- **Connection warnings:** `NOT_FOUND: [AXONIQ-1302]` warnings are harmless
+- **CLI not responding:** Run the JAR directly in interactive terminal
+- **Tests hanging:** TimeTickScheduler tests require AxonServer for proper async processing
+
+## Next Steps
+
+See `docs/01_DESIGN.md` for planned phases:
+- Phase 5: Multiple Pets & Statistics Dashboard
+- Phase 6: Items & Inventory System
+- Phase 7: Mini-Games & Achievements
+- Phase 8: REST API
+- Phase 9: Advanced Features (snapshots, upcasting, deadlines)
 
 ## License
 

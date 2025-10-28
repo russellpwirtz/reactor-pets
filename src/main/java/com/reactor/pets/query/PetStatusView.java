@@ -1,7 +1,9 @@
 package com.reactor.pets.query;
 
+import com.reactor.pets.aggregate.EvolutionPath;
 import com.reactor.pets.aggregate.PetStage;
 import com.reactor.pets.aggregate.PetType;
+import com.reactor.pets.util.PetAsciiArt;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -28,6 +30,8 @@ public class PetStatusView {
   private int health;
   @Enumerated(EnumType.STRING)
   private PetStage stage;
+  @Enumerated(EnumType.STRING)
+  private EvolutionPath evolutionPath;
   private boolean isAlive;
   private int age;
   private int totalTicks;
@@ -39,15 +43,23 @@ public class PetStatusView {
     String happinessIndicator = happiness < 20 ? " 🔴" : happiness < 40 ? " 🟡" : "";
     String healthIndicator = health < 30 ? " 🔴" : health < 50 ? " 🟡" : "";
 
+    String evolutionPathDisplay =
+        evolutionPath == EvolutionPath.UNDETERMINED
+            ? "Not yet determined"
+            : evolutionPath.toString();
+    String asciiArt = PetAsciiArt.getArt(type, stage);
+
     return String.format(
         """
 
+                %s
                 Pet Status:
                 -----------
                 ID: %s
                 Name: %s
                 Type: %s
                 Stage: %s
+                Evolution Path: %s
                 Status: %s
                 Age: %d
 
@@ -56,10 +68,12 @@ public class PetStatusView {
                   Happiness: %d/100%s
                   Health: %d/100%s
                 """,
+        asciiArt,
         petId,
         name,
         type,
         stage,
+        evolutionPathDisplay,
         isAlive ? "Alive" : "Dead",
         age,
         hunger,
