@@ -1,0 +1,302 @@
+package com.reactor.pets.aggregate;
+
+import static org.axonframework.test.matchers.Matchers.matches;
+
+import com.reactor.pets.command.CreatePetCommand;
+import com.reactor.pets.command.FeedPetCommand;
+import com.reactor.pets.event.PetCreatedEvent;
+import com.reactor.pets.event.PetFedEvent;
+import java.time.Instant;
+import org.axonframework.eventhandling.EventMessage;
+import org.axonframework.test.aggregate.AggregateTestFixture;
+import org.axonframework.test.aggregate.FixtureConfiguration;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Unit tests for Pet Aggregate using Axon's AggregateTestFixture.
+ *
+ * <p>These tests verify: - Command handling logic - Event sourcing handlers - Business rule
+ * validation - Aggregate state transitions
+ */
+@DisplayName("Pet Aggregate")
+class PetAggregateTest {
+
+  private FixtureConfiguration<Pet> fixture;
+
+  @BeforeEach
+  void setUp() {
+    fixture = new AggregateTestFixture<>(Pet.class);
+  }
+
+  @Nested
+  @DisplayName("Pet Creation")
+  class PetCreation {
+
+    @Test
+    @DisplayName("should create pet with valid command")
+    void shouldCreatePetWithValidCommand() {
+      String petId = "pet-123";
+      String name = "Fluffy";
+      PetType type = PetType.CAT;
+
+      fixture
+          .givenNoPriorActivity()
+          .when(new CreatePetCommand(petId, name, type))
+          .expectSuccessfulHandlerExecution()
+          .expectEventsMatching(
+              matches(
+                  events -> {
+                    if (events.size() != 1) {
+                      return false;
+                    }
+                    EventMessage<?> eventMsg = (EventMessage<?>) events.get(0);
+                    Object payload = eventMsg.getPayload();
+                    if (!(payload instanceof PetCreatedEvent event)) {
+                      return false;
+                    }
+                    return event.getPetId().equals(petId)
+                        && event.getName().equals(name)
+                        && event.getType().equals(type)
+                        && event.getTimestamp() != null;
+                  }));
+    }
+
+    @Test
+    @DisplayName("should reject creation with null name")
+    void shouldRejectCreationWithNullName() {
+      fixture
+          .givenNoPriorActivity()
+          .when(new CreatePetCommand("pet-123", null, PetType.DOG))
+          .expectException(IllegalArgumentException.class)
+          .expectExceptionMessage("Pet name cannot be empty");
+    }
+
+    @Test
+    @DisplayName("should reject creation with empty name")
+    void shouldRejectCreationWithEmptyName() {
+      fixture
+          .givenNoPriorActivity()
+          .when(new CreatePetCommand("pet-123", "  ", PetType.DOG))
+          .expectException(IllegalArgumentException.class)
+          .expectExceptionMessage("Pet name cannot be empty");
+    }
+
+    @Test
+    @DisplayName("should reject creation with null type")
+    void shouldRejectCreationWithNullType() {
+      fixture
+          .givenNoPriorActivity()
+          .when(new CreatePetCommand("pet-123", "Rex", null))
+          .expectException(IllegalArgumentException.class)
+          .expectExceptionMessage("Pet type cannot be null");
+    }
+  }
+
+  @Nested
+  @DisplayName("Pet Feeding")
+  class PetFeeding {
+
+    @Test
+    @DisplayName("should reduce hunger when feeding pet")
+    void shouldReduceHungerWhenFeedingPet() {
+      String petId = "pet-123";
+
+      fixture
+          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()))
+          .when(new FeedPetCommand(petId, 20))
+          .expectSuccessfulHandlerExecution()
+          .expectEventsMatching(
+              matches(
+                  events -> {
+                    if (events.size() != 1) {
+                      return false;
+                    }
+                    EventMessage<?> eventMsg = (EventMessage<?>) events.get(0);
+                    Object payload = eventMsg.getPayload();
+                    if (!(payload instanceof PetFedEvent event)) {
+                      return false;
+                    }
+                    return event.getPetId().equals(petId)
+                        && event.getHungerReduction() == 20
+                        && event.getTimestamp() != null;
+                  }));
+    }
+
+    @Test
+    @DisplayName("should cap hunger reduction at current hunger level")
+    void shouldCapHungerReductionAtCurrentHungerLevel() {
+      String petId = "pet-123";
+
+      fixture
+          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()))
+          .when(new FeedPetCommand(petId, 100)) // More than initial hunger of 30
+          .expectSuccessfulHandlerExecution()
+          .expectEventsMatching(
+              matches(
+                  events -> {
+                    if (events.size() != 1) {
+                      return false;
+                    }
+                    EventMessage<?> eventMsg = (EventMessage<?>) events.get(0);
+                    Object payload = eventMsg.getPayload();
+                    if (!(payload instanceof PetFedEvent event)) {
+                      return false;
+                    }
+                    // Initial hunger is 30, so reduction should be capped at 30
+                    return event.getHungerReduction() == 30;
+                  }));
+    }
+
+    @Test
+    @DisplayName("should reject feeding with zero food amount")
+    void shouldRejectFeedingWithZeroFoodAmount() {
+      String petId = "pet-123";
+
+      fixture
+          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()))
+          .when(new FeedPetCommand(petId, 0))
+          .expectException(IllegalArgumentException.class)
+          .expectExceptionMessage("Food amount must be positive");
+    }
+
+    @Test
+    @DisplayName("should reject feeding with negative food amount")
+    void shouldRejectFeedingWithNegativeFoodAmount() {
+      String petId = "pet-123";
+
+      fixture
+          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()))
+          .when(new FeedPetCommand(petId, -10))
+          .expectException(IllegalArgumentException.class)
+          .expectExceptionMessage("Food amount must be positive");
+    }
+  }
+
+  @Nested
+  @DisplayName("Pet State Management")
+  class PetStateManagement {
+
+    @Test
+    @DisplayName("should initialize with correct default stats")
+    void shouldInitializeWithCorrectDefaultStats() {
+      String petId = "pet-123";
+
+      // This test verifies the event sourcing handler sets correct initial state
+      // We feed with amount > initial hunger to verify the initial hunger is 30
+      fixture
+          .given(new PetCreatedEvent(petId, "Max", PetType.DRAGON, Instant.now()))
+          .when(new FeedPetCommand(petId, 50))
+          .expectSuccessfulHandlerExecution()
+          .expectEventsMatching(
+              matches(
+                  events -> {
+                    if (events.size() != 1) {
+                      return false;
+                    }
+                    EventMessage<?> eventMsg = (EventMessage<?>) events.get(0);
+                    Object payload = eventMsg.getPayload();
+                    if (!(payload instanceof PetFedEvent event)) {
+                      return false;
+                    }
+                    // Initial hunger should be 30, so reduction is capped at 30
+                    return event.getHungerReduction() == 30;
+                  }));
+    }
+
+    @Test
+    @DisplayName("should accumulate hunger reduction across multiple feedings")
+    void shouldAccumulateHungerReductionAcrossMultipleFeedings() {
+      String petId = "pet-123";
+
+      fixture
+          .given(
+              new PetCreatedEvent(petId, "Max", PetType.DRAGON, Instant.now()),
+              new PetFedEvent(petId, 10, Instant.now()))
+          .when(new FeedPetCommand(petId, 25))
+          .expectSuccessfulHandlerExecution()
+          .expectEventsMatching(
+              matches(
+                  events -> {
+                    if (events.size() != 1) {
+                      return false;
+                    }
+                    EventMessage<?> eventMsg = (EventMessage<?>) events.get(0);
+                    Object payload = eventMsg.getPayload();
+                    if (!(payload instanceof PetFedEvent event)) {
+                      return false;
+                    }
+                    // After first feeding: hunger = 30 - 10 = 20
+                    // Second feeding should cap at 20
+                    return event.getHungerReduction() == 20;
+                  }));
+    }
+  }
+
+  @Nested
+  @DisplayName("All Pet Types")
+  class AllPetTypes {
+
+    @Test
+    @DisplayName("should create DOG pet successfully")
+    void shouldCreateDogPet() {
+      fixture
+          .givenNoPriorActivity()
+          .when(new CreatePetCommand("pet-1", "Rex", PetType.DOG))
+          .expectSuccessfulHandlerExecution()
+          .expectEventsMatching(
+              matches(
+                  events -> {
+                    if (events.size() != 1) {
+                      return false;
+                    }
+                    EventMessage<?> eventMsg = (EventMessage<?>) events.get(0);
+                    Object payload = eventMsg.getPayload();
+                    return payload instanceof PetCreatedEvent event
+                        && event.getType() == PetType.DOG;
+                  }));
+    }
+
+    @Test
+    @DisplayName("should create CAT pet successfully")
+    void shouldCreateCatPet() {
+      fixture
+          .givenNoPriorActivity()
+          .when(new CreatePetCommand("pet-2", "Whiskers", PetType.CAT))
+          .expectSuccessfulHandlerExecution()
+          .expectEventsMatching(
+              matches(
+                  events -> {
+                    if (events.size() != 1) {
+                      return false;
+                    }
+                    EventMessage<?> eventMsg = (EventMessage<?>) events.get(0);
+                    Object payload = eventMsg.getPayload();
+                    return payload instanceof PetCreatedEvent event
+                        && event.getType() == PetType.CAT;
+                  }));
+    }
+
+    @Test
+    @DisplayName("should create DRAGON pet successfully")
+    void shouldCreateDragonPet() {
+      fixture
+          .givenNoPriorActivity()
+          .when(new CreatePetCommand("pet-3", "Smaug", PetType.DRAGON))
+          .expectSuccessfulHandlerExecution()
+          .expectEventsMatching(
+              matches(
+                  events -> {
+                    if (events.size() != 1) {
+                      return false;
+                    }
+                    EventMessage<?> eventMsg = (EventMessage<?>) events.get(0);
+                    Object payload = eventMsg.getPayload();
+                    return payload instanceof PetCreatedEvent event
+                        && event.getType() == PetType.DRAGON;
+                  }));
+    }
+  }
+}

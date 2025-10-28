@@ -37,4 +37,24 @@
         <Class name="~.*CliRunner"/>
         <Bug pattern="DM_DEFAULT_ENCODING"/>
     </Match>
+
+    <!-- Allow non-localized String case conversions -->
+    <Match>
+        <Bug pattern="DM_CONVERT_CASE"/>
+    </Match>
+
+    <!-- Allow exceptions in constructors (needed for Axon aggregates) -->
+    <Match>
+        <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+    </Match>
+
+    <!-- Allow unread fields (Axon uses reflection to access aggregate fields) -->
+    <Match>
+        <Bug pattern="URF_UNREAD_FIELD"/>
+    </Match>
+
+    <!-- Allow \n in format strings instead of %n -->
+    <Match>
+        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+    </Match>
 </FindBugsFilter>

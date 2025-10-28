@@ -1,0 +1,28 @@
+# Test Configuration for Reactor Pets
+# This configuration is used when running integration tests
+
+spring:
+  application:
+    name: reactor-pets-test
+
+# Axon Server Configuration for Tests
+# Assumes Axon Server is running on default ports via docker-compose
+axon:
+  axonserver:
+    servers: localhost:8124
+  eventhandling:
+    processors:
+      pet-status:
+        mode: tracking
+
+# Logging Configuration for Tests
+logging:
+  level:
+    root: INFO
+    com.reactor.pets: DEBUG
+    org.axonframework: INFO
+    org.springframework: WARN
+
+# Disable banner for cleaner test output
+spring.main:
+  banner-mode: off

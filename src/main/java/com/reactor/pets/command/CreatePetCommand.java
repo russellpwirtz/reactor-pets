@@ -6,7 +6,8 @@ import org.axonframework.modelling.command.TargetAggregateIdentifier;
 
 @Value
 public class CreatePetCommand {
-  @TargetAggregateIdentifier String petId;
+  @TargetAggregateIdentifier
+  String petId;
   String name;
   PetType type;
 }

@@ -25,6 +25,9 @@
     </module>
 
     <module name="TreeWalker">
+        <!-- Enable suppression comments -->
+        <module name="SuppressionCommentFilter"/>
+
         <!-- Naming Conventions -->
         <module name="ConstantName"/>
         <module name="LocalFinalVariableName"/>

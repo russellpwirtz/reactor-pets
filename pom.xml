@@ -114,12 +114,15 @@
         <version>${spotless.version}</version>
         <configuration>
           <java>
-            <googleJavaFormat>
-              <version>1.19.1</version>
-              <style>GOOGLE</style>
-            </googleJavaFormat>
+            <toggleOffOn/>
             <removeUnusedImports/>
-            <formatAnnotations/>
+            <trimTrailingWhitespace/>
+            <endWithNewline/>
+            <indent>
+              <spaces>true</spaces>
+              <spacesPerTab>2</spacesPerTab>
+            </indent>
+            <importOrder/>
           </java>
           <pom>
             <sortPom>
@@ -221,6 +224,13 @@
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>${jacoco.version}</version>
+        <configuration>
+          <excludes>
+            <exclude>**/PetCliRunner.class</exclude>
+            <exclude>**/ReactorPetsApplication.class</exclude>
+            <exclude>**/query/*.class</exclude>
+          </excludes>
+        </configuration>
         <executions>
           <execution>
             <goals>

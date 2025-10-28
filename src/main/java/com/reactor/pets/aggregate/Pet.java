@@ -16,7 +16,8 @@ import org.axonframework.spring.stereotype.Aggregate;
 @NoArgsConstructor
 public class Pet {
 
-  @AggregateIdentifier private String petId;
+  @AggregateIdentifier
+  private String petId;
   private String name;
   private PetType type;
   private int hunger; // 0-100

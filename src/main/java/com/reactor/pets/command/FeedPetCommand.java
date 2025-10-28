@@ -5,6 +5,7 @@ import org.axonframework.modelling.command.TargetAggregateIdentifier;
 
 @Value
 public class FeedPetCommand {
-  @TargetAggregateIdentifier String petId;
+  @TargetAggregateIdentifier
+  String petId;
   int foodAmount;
 }

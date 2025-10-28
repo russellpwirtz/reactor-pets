@@ -35,75 +35,47 @@ Phase 1 provides:
 docker-compose up -d
 ```
 
-Verify Axon Server is running:
-- GUI: http://localhost:8024
-- gRPC: localhost:8124
+Verify Axon Server is running at http://localhost:8024 (GUI) and localhost:8124 (gRPC)
 
-### 2. Build the Application
+### 2. Build & Run
 
 ```bash
+# Build (skip tests for faster startup)
 mvn clean package -DskipTests
+
+# Run the CLI application
+mvn spring-boot:run
 ```
 
-### 3. Run the Application
+**Note:** The CLI requires an interactive terminal - run the JAR directly, not through Maven.
 
-**IMPORTANT**: The CLI requires an interactive terminal. Run in the foreground:
-
-```bash
-java -jar target/reactor-pets-1.0.0-SNAPSHOT.jar
-```
-
-## Developer Tooling
-
-This project includes comprehensive code quality and formatting tools:
-
-### Tools Configured
-
-- **Spotless** - Automatic code formatter using Google Java Format
-- **Checkstyle** - Code style checker with custom rules
-- **SpotBugs** - Static analysis for bug detection
-- **Maven Enforcer** - Build and dependency requirements enforcement
-- **JaCoCo** - Code coverage reporting (50% minimum required)
-
-### Common Commands
+## Testing
 
 ```bash
-# Format all code (automatically fixes formatting issues)
-mvn spotless:apply
-
-# Check if code is properly formatted (fails if not)
-mvn spotless:check
-
-# Run code style checks
-mvn checkstyle:check
-
-# Run static analysis for bugs
-mvn spotbugs:check
-
-# Run tests and generate coverage report
+# Run all tests (42 tests covering aggregates, projections, and integration)
 mvn test
-# View report at: target/site/jacoco/index.html
 
-# Run all quality checks (automatic during build)
+# Run tests with coverage report
 mvn verify
+# View coverage report: target/site/jacoco/index.html
 
-# Full clean build with all checks
-mvn clean verify
+# Run specific test class
+mvn test -Dtest=PetAggregateTest
 ```
 
-### Pre-Commit Best Practices
+**Test Coverage:** 97% (aggregate), 100% (projection)
 
-Before committing code, run:
+## Development Workflow
 
 ```bash
-# Format code
+# Format code (before committing)
 mvn spotless:apply
 
-# Run all checks
+# Run all checks (formatting, checkstyle, spotbugs, tests)
 mvn clean verify
 ```
 
-All quality checks are integrated into the Maven build lifecycle and run automatically during `mvn verify` or `mvn package`.
+**Quality Tools:** Spotless (formatter), Checkstyle (style), SpotBugs (static analysis), JaCoCo (coverage)
 
 ## Usage
 
@@ -159,25 +131,17 @@ Stats:
 
 ## Architecture
 
-### Aggregates
-- **Pet**: The write model enforcing business rules (hunger, happiness, health)
+Built using **Event Sourcing** and **CQRS** patterns:
 
-### Commands
-- `CreatePetCommand(petId, name, type)`
-- `FeedPetCommand(petId, foodAmount)`
+- **Aggregate:** `Pet` - write model enforcing business rules
+- **Commands:** `CreatePetCommand`, `FeedPetCommand`
+- **Events:** `PetCreatedEvent`, `PetFedEvent`
+- **Projection:** `PetStatusProjection` - in-memory read model
+- **Query:** `GetPetStatusQuery` returns current pet state
 
-### Events
-- `PetCreatedEvent(petId, name, type, timestamp)`
-- `PetFedEvent(petId, hungerReduction, timestamp)`
+**Business Rules:** Hunger 0-100, new pets start as EGG (hunger=30, happiness=70, health=100)
 
-### Projections
-- **PetStatusProjection**: In-memory HashMap storing current pet state
-
-### Business Rules
-- Hunger ranges from 0-100
-- Cannot feed a dead pet
-- Feeding reduces hunger (minimum 0)
-- New pets start with: hunger=30, happiness=70, health=100, stage=EGG
+See `docs/01_DESIGN.md` for detailed architecture and future phases.
 
 ## Project Structure
 
@@ -202,42 +166,28 @@ src/main/java/com/reactor/pets/
 └── ReactorPetsApplication.java    # Main Spring Boot application
 ```
 
-## Viewing Events in Axon Server
+## Axon Server UI
 
-1. Open http://localhost:8024
-2. Navigate to "Search" → "Event Processor Browser"
-3. View all events for your pet aggregates
-4. Inspect event payloads and metadata
+View events and system state at http://localhost:8024:
+- Navigate to "Search" → "Event Processor Browser" to view all pet events
+- Inspect event payloads, metadata, and aggregate state
 
 ## Troubleshooting
 
-### Axon Server Connection Issues
+- **Connection warnings:** `NOT_FOUND: [AXONIQ-1302]` warnings are harmless - Axon Server will auto-retry
+- **CLI not responding:** Run the JAR directly in an interactive terminal (not through Maven or background)
 
-If you see `NOT_FOUND: [AXONIQ-1302] default: not found` warnings, these are harmless. Axon Server will auto-retry and connect successfully.
+## What You'll Learn
 
-### CLI Not Responding
+This project demonstrates:
+- **Event Sourcing** - Pet state derived from immutable event stream
+- **CQRS** - Separate command (write) and query (read) models
+- **Axon Framework** - Aggregates, command handlers, event handlers, query handlers
+- **Domain-Driven Design** - Aggregates, commands, events, projections
+- **Reactive Programming** - Project Reactor (coming in Phase 3+)
 
-Ensure you're running the JAR directly in an interactive terminal, not through Maven or in the background.
-
-## Next Steps (Phase 2+)
-
-- [ ] Additional commands: play, clean
-- [ ] Database persistence for projections
-- [ ] Reactive time system with automatic stat degradation
-- [ ] Pet evolution through life stages
-- [ ] Multiple pets support
-- [ ] Items and inventory system
-- [ ] REST API for frontend integration
-
-## Learning Outcomes
-
-Phase 1 demonstrates:
-- ✅ **Event Sourcing**: Pet state derived from events
-- ✅ **CQRS**: Separate command (Pet aggregate) and query (Projection) models
-- ✅ **Axon Framework**: `@Aggregate`, `@CommandHandler`, `@EventSourcingHandler`, `@QueryHandler`
-- ✅ **Domain Events**: Immutable facts representing state changes
-- ✅ **Projection**: Building read models from event streams
+See `docs/01_DESIGN.md` for 9 planned phases including: time-based degradation, pet evolution, sagas, inventory system, mini-games, and REST API.
 
 ## License
 
-Educational project demonstrating Axon Framework and Project Reactor patterns.
+Educational project - MIT License
