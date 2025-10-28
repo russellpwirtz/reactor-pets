@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: reactor-pets
+
+axon:
+  axonserver:
+    servers: localhost:8124
+  eventhandling:
+    processors:
+      pet-status:
+        mode: tracking
+
+logging:
+  level:
+    org.axonframework: INFO
+    com.reactor.pets: DEBUG
