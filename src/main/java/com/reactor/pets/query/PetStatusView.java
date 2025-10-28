@@ -29,10 +29,16 @@ public class PetStatusView {
   @Enumerated(EnumType.STRING)
   private PetStage stage;
   private boolean isAlive;
+  private int age;
+  private int totalTicks;
   private Instant lastUpdated;
 
   @Override
   public String toString() {
+    String hungerIndicator = hunger > 70 ? " 🔴" : hunger > 50 ? " 🟡" : "";
+    String happinessIndicator = happiness < 20 ? " 🔴" : happiness < 40 ? " 🟡" : "";
+    String healthIndicator = health < 30 ? " 🔴" : health < 50 ? " 🟡" : "";
+
     return String.format(
         """
 
@@ -43,12 +49,24 @@ public class PetStatusView {
                 Type: %s
                 Stage: %s
                 Status: %s
+                Age: %d
 
                 Stats:
-                  Hunger: %d/100
-                  Happiness: %d/100
-                  Health: %d/100
+                  Hunger: %d/100%s
+                  Happiness: %d/100%s
+                  Health: %d/100%s
                 """,
-        petId, name, type, stage, isAlive ? "Alive" : "Dead", hunger, happiness, health);
+        petId,
+        name,
+        type,
+        stage,
+        isAlive ? "Alive" : "Dead",
+        age,
+        hunger,
+        hungerIndicator,
+        happiness,
+        happinessIndicator,
+        health,
+        healthIndicator);
   }
 }

@@ -4,10 +4,14 @@ import com.reactor.pets.command.CleanPetCommand;
 import com.reactor.pets.command.CreatePetCommand;
 import com.reactor.pets.command.FeedPetCommand;
 import com.reactor.pets.command.PlayWithPetCommand;
+import com.reactor.pets.command.TimeTickCommand;
 import com.reactor.pets.event.PetCleanedEvent;
 import com.reactor.pets.event.PetCreatedEvent;
+import com.reactor.pets.event.PetDiedEvent;
 import com.reactor.pets.event.PetFedEvent;
+import com.reactor.pets.event.PetHealthDeterioratedEvent;
 import com.reactor.pets.event.PetPlayedWithEvent;
+import com.reactor.pets.event.TimePassedEvent;
 import java.time.Instant;
 import lombok.NoArgsConstructor;
 import org.axonframework.commandhandling.CommandHandler;
@@ -29,6 +33,9 @@ public class Pet {
   private int health; // 0-100
   private PetStage stage;
   private boolean isAlive;
+  private int age; // Age in units (every 10 ticks = 1 age)
+  private int totalTicks; // Total time ticks elapsed
+  private long lastTickSequence; // Last processed tick sequence (for idempotency)
 
   @CommandHandler
   public Pet(CreatePetCommand command) {
@@ -109,6 +116,9 @@ public class Pet {
     this.health = 100;
     this.stage = PetStage.EGG;
     this.isAlive = true;
+    this.age = 0;
+    this.totalTicks = 0;
+    this.lastTickSequence = -1;
   }
 
   @EventSourcingHandler
@@ -125,5 +135,93 @@ public class Pet {
   @EventSourcingHandler
   public void on(PetCleanedEvent event) {
     this.health = Math.min(100, this.health + event.getHealthIncrease());
+  }
+
+  @CommandHandler
+  public void handle(TimeTickCommand command) {
+    // Ignore if pet is dead
+    if (!isAlive) {
+      return; // No-op for dead pets
+    }
+
+    // Idempotency check: ignore if we've already processed this tick
+    if (command.getTickCount() <= lastTickSequence) {
+      return;
+    }
+
+    // Calculate stat changes
+    int hungerIncrease = Math.min(3, 100 - this.hunger);
+    int happinessDecrease = Math.min(2, this.happiness);
+
+    // Every 10 ticks = 1 age unit
+    int ageIncrease = ((totalTicks + 1) % 10 == 0) ? 1 : 0;
+
+    // Apply time passed event
+    AggregateLifecycle.apply(
+        new TimePassedEvent(
+            command.getPetId(),
+            hungerIncrease,
+            happinessDecrease,
+            ageIncrease,
+            command.getTickCount(),
+            Instant.now()));
+
+    // Calculate health deterioration after time has passed
+    int newHunger = Math.min(100, this.hunger + hungerIncrease);
+    int newHappiness = Math.max(0, this.happiness - happinessDecrease);
+    int healthDecrease = 0;
+    String deteriorationReason = null;
+
+    if (newHunger > 80) {
+      healthDecrease += 5;
+      deteriorationReason = "Extreme hunger";
+    }
+    if (newHappiness < 20) {
+      healthDecrease += 3;
+      if (deteriorationReason != null) {
+        deteriorationReason += " and low happiness";
+      } else {
+        deteriorationReason = "Low happiness";
+      }
+    }
+
+    // Apply health deterioration if needed
+    if (healthDecrease > 0) {
+      healthDecrease = Math.min(healthDecrease, this.health);
+      AggregateLifecycle.apply(
+          new PetHealthDeterioratedEvent(
+              command.getPetId(), healthDecrease, deteriorationReason, Instant.now()));
+    }
+
+    // Check for death after health deterioration
+    int newHealth = this.health - healthDecrease;
+    if (newHealth <= 0) {
+      AggregateLifecycle.apply(
+          new PetDiedEvent(
+              command.getPetId(),
+              this.age + ageIncrease,
+              this.totalTicks + 1,
+              "Health reached zero: " + deteriorationReason,
+              Instant.now()));
+    }
+  }
+
+  @EventSourcingHandler
+  public void on(TimePassedEvent event) {
+    this.hunger = Math.min(100, this.hunger + event.getHungerIncrease());
+    this.happiness = Math.max(0, this.happiness - event.getHappinessDecrease());
+    this.age += event.getAgeIncrease();
+    this.totalTicks++;
+    this.lastTickSequence = event.getTickCount();
+  }
+
+  @EventSourcingHandler
+  public void on(PetHealthDeterioratedEvent event) {
+    this.health = Math.max(0, this.health - event.getHealthDecrease());
+  }
+
+  @EventSourcingHandler
+  public void on(PetDiedEvent event) {
+    this.isAlive = false;
   }
 }

@@ -2,8 +2,12 @@ package com.reactor.pets.projection;
 
 import com.reactor.pets.event.PetCleanedEvent;
 import com.reactor.pets.event.PetCreatedEvent;
+import com.reactor.pets.event.PetDiedEvent;
 import com.reactor.pets.event.PetFedEvent;
+import com.reactor.pets.event.PetHealthDeterioratedEvent;
 import com.reactor.pets.event.PetPlayedWithEvent;
+import com.reactor.pets.event.TimePassedEvent;
+import com.reactor.pets.query.GetAlivePetsQuery;
 import com.reactor.pets.query.GetAllPetsQuery;
 import com.reactor.pets.query.GetPetStatusQuery;
 import com.reactor.pets.query.PetStatusRepository;
@@ -39,6 +43,8 @@ public class PetStatusProjection {
     view.setHealth(100);
     view.setStage(com.reactor.pets.aggregate.PetStage.EGG);
     view.setAlive(true);
+    view.setAge(0);
+    view.setTotalTicks(0);
     view.setLastUpdated(event.getTimestamp());
 
     petStatusRepository.save(view);
@@ -121,10 +127,87 @@ public class PetStatusProjection {
         .orElseThrow(() -> new IllegalArgumentException("Pet not found: " + query.getPetId()));
   }
 
+  @EventHandler
+  @Transactional
+  public void on(TimePassedEvent event) {
+    log.debug("Processing TimePassedEvent for petId: {}", event.getPetId());
+
+    petStatusRepository
+        .findById(event.getPetId())
+        .ifPresent(
+            view -> {
+              int newHunger = Math.min(100, view.getHunger() + event.getHungerIncrease());
+              int newHappiness = Math.max(0, view.getHappiness() - event.getHappinessDecrease());
+              view.setHunger(newHunger);
+              view.setHappiness(newHappiness);
+              view.setAge(view.getAge() + event.getAgeIncrease());
+              view.setTotalTicks(view.getTotalTicks() + 1);
+              view.setLastUpdated(event.getTimestamp());
+              petStatusRepository.save(view);
+              log.debug(
+                  "Time passed for pet {}. Age: {}, Ticks: {}, Hunger: {}, Happiness: {}",
+                  view.getName(),
+                  view.getAge(),
+                  view.getTotalTicks(),
+                  newHunger,
+                  newHappiness);
+            });
+  }
+
+  @EventHandler
+  @Transactional
+  public void on(PetHealthDeterioratedEvent event) {
+    log.debug("Processing PetHealthDeterioratedEvent for petId: {}", event.getPetId());
+
+    petStatusRepository
+        .findById(event.getPetId())
+        .ifPresent(
+            view -> {
+              int newHealth = Math.max(0, view.getHealth() - event.getHealthDecrease());
+              view.setHealth(newHealth);
+              view.setLastUpdated(event.getTimestamp());
+              petStatusRepository.save(view);
+              log.warn(
+                  "Pet {} health deteriorated by {} to {}. Reason: {}",
+                  view.getName(),
+                  event.getHealthDecrease(),
+                  newHealth,
+                  event.getReason());
+            });
+  }
+
+  @EventHandler
+  @Transactional
+  public void on(PetDiedEvent event) {
+    log.debug("Processing PetDiedEvent for petId: {}", event.getPetId());
+
+    petStatusRepository
+        .findById(event.getPetId())
+        .ifPresent(
+            view -> {
+              view.setAlive(false);
+              view.setLastUpdated(event.getTimestamp());
+              petStatusRepository.save(view);
+              log.error(
+                  "Pet {} has died at age {}. Total ticks: {}. Cause: {}",
+                  view.getName(),
+                  event.getFinalAge(),
+                  event.getTotalTicks(),
+                  event.getCauseOfDeath());
+            });
+  }
+
   @QueryHandler
   public List<PetStatusView> handle(GetAllPetsQuery query) {
     log.debug("Handling GetAllPetsQuery");
 
     return petStatusRepository.findAll();
+  }
+
+  @QueryHandler
+  public List<PetStatusView> handle(GetAlivePetsQuery query) {
+    log.debug("Handling GetAlivePetsQuery");
+
+    return petStatusRepository.findByIsAlive(true);
   }
 }

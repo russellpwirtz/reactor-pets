@@ -12,15 +12,19 @@ A virtual pet application built with Axon Framework 4.x and Project Reactor, dem
 - **Build**: Maven
 - **Code Quality**: Spotless, Checkstyle, SpotBugs, JaCoCo
 
-## Phase 2 Complete ✅
+## Phase 3 Complete ✅
 
 Current features:
 - Pet aggregate with event sourcing (create, feed, play, clean)
+- **Reactive time system with automatic stat degradation** (NEW)
+- **Health deterioration when stats are critical** (NEW)
+- **Pet death mechanic when health reaches zero** (NEW)
+- **Visual indicators for critical stats** (NEW)
 - JPA persistence with H2 database for projections
 - Event history queries via EventStore
 - Interactive CLI with list and history commands
 - Docker-based Axon Server
-- 59 passing tests with integration coverage
+- 73 passing tests with comprehensive time system coverage
 
 ## Prerequisites
 
@@ -64,7 +68,7 @@ mvn verify
 mvn test -Dtest=PetAggregateTest
 ```
 
-**Test Suite:** 59 tests (aggregate, projection, integration)
+**Test Suite:** 73 tests (aggregate, projection, time system, integration)
 
 ## Development Workflow
 
