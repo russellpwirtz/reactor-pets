@@ -2,33 +2,69 @@ package com.reactor.pets.projection;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 
 import com.reactor.pets.aggregate.PetStage;
 import com.reactor.pets.aggregate.PetType;
 import com.reactor.pets.event.PetCreatedEvent;
 import com.reactor.pets.event.PetFedEvent;
 import com.reactor.pets.query.GetPetStatusQuery;
+import com.reactor.pets.query.PetStatusRepository;
 import com.reactor.pets.query.PetStatusView;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  * Unit tests for PetStatusProjection.
  *
- * <p>These tests verify: - Event handler logic for projection updates - Query handler logic - Pet
- * status view construction - Edge cases and error handling
+ * <p>
+ * These tests verify:
+ * - Event handler logic for projection updates
+ * - Query handler logic
+ * - Pet status view construction
+ * - Edge cases and error handling
  */
 @DisplayName("Pet Status Projection")
+@ExtendWith(MockitoExtension.class)
 class PetStatusProjectionTest {
+
+  @Mock
+  private PetStatusRepository petStatusRepository;
 
   private PetStatusProjection projection;
 
+  // In-memory store to simulate repository behavior for tests
+  private Map<String, PetStatusView> testStore;
+
   @BeforeEach
   void setUp() {
-    projection = new PetStatusProjection();
+    testStore = new HashMap<>();
+    projection = new PetStatusProjection(petStatusRepository);
+
+    // Setup mock behavior with lenient() to avoid unnecessary stubbing errors
+    // Some tests may not use all stubs, which is fine
+    lenient().when(petStatusRepository.save(any(PetStatusView.class)))
+        .thenAnswer(invocation -> {
+          PetStatusView view = invocation.getArgument(0);
+          testStore.put(view.getPetId(), view);
+          return view;
+        });
+
+    lenient().when(petStatusRepository.findById(any(String.class)))
+        .thenAnswer(invocation -> {
+          String petId = invocation.getArgument(0);
+          return Optional.ofNullable(testStore.get(petId));
+        });
   }
 
   @Nested
@@ -66,8 +102,7 @@ class PetStatusProjectionTest {
       // Given
       PetCreatedEvent event1 = new PetCreatedEvent("pet-1", "Dog Pet", PetType.DOG, Instant.now());
       PetCreatedEvent event2 = new PetCreatedEvent("pet-2", "Cat Pet", PetType.CAT, Instant.now());
-      PetCreatedEvent event3 =
-          new PetCreatedEvent("pet-3", "Dragon Pet", PetType.DRAGON, Instant.now());
+      PetCreatedEvent event3 = new PetCreatedEvent("pet-3", "Dragon Pet", PetType.DRAGON, Instant.now());
 
       // When
       projection.on(event1);

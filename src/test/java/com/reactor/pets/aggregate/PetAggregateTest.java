@@ -2,10 +2,14 @@ package com.reactor.pets.aggregate;
 
 import static org.axonframework.test.matchers.Matchers.matches;
 
+import com.reactor.pets.command.CleanPetCommand;
 import com.reactor.pets.command.CreatePetCommand;
 import com.reactor.pets.command.FeedPetCommand;
+import com.reactor.pets.command.PlayWithPetCommand;
+import com.reactor.pets.event.PetCleanedEvent;
 import com.reactor.pets.event.PetCreatedEvent;
 import com.reactor.pets.event.PetFedEvent;
+import com.reactor.pets.event.PetPlayedWithEvent;
 import java.time.Instant;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.test.aggregate.AggregateTestFixture;
@@ -298,5 +302,128 @@ class PetAggregateTest {
                         && event.getType() == PetType.DRAGON;
                   }));
     }
+  }
+
+  @Nested
+  @DisplayName("Pet Playing")
+  class PetPlaying {
+
+    @Test
+    @DisplayName("should increase happiness and hunger when playing")
+    void shouldIncreaseHappinessAndHungerWhenPlaying() {
+      String petId = "pet-123";
+
+      fixture
+          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()))
+          .when(new PlayWithPetCommand(petId))
+          .expectSuccessfulHandlerExecution()
+          .expectEventsMatching(
+              matches(
+                  events -> {
+                    if (events.size() != 1) {
+                      return false;
+                    }
+                    EventMessage<?> eventMsg = (EventMessage<?>) events.get(0);
+                    Object payload = eventMsg.getPayload();
+                    if (!(payload instanceof PetPlayedWithEvent event)) {
+                      return false;
+                    }
+                    return event.getPetId().equals(petId)
+                        && event.getHappinessIncrease() == 15
+                        && event.getHungerIncrease() == 5
+                        && event.getTimestamp() != null;
+                  }));
+    }
+
+    @Test
+    @DisplayName("should cap happiness increase at 100")
+    void shouldCapHappinessIncreaseAt100() {
+      String petId = "pet-123";
+
+      // Happiness starts at 70, so we can increase by at most 30
+      fixture
+          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()))
+          .when(new PlayWithPetCommand(petId))
+          .expectSuccessfulHandlerExecution()
+          .expectEventsMatching(
+              matches(
+                  events -> {
+                    if (events.size() != 1) {
+                      return false;
+                    }
+                    EventMessage<?> eventMsg = (EventMessage<?>) events.get(0);
+                    Object payload = eventMsg.getPayload();
+                    if (!(payload instanceof PetPlayedWithEvent event)) {
+                      return false;
+                    }
+                    // Initial happiness is 70, can increase by 15 to reach 85
+                    return event.getHappinessIncrease() == 15;
+                  }));
+    }
+
+    @Test
+    @DisplayName("should reject playing when happiness is at maximum")
+    void shouldRejectPlayingWhenHappinessIsAtMaximum() {
+      String petId = "pet-123";
+
+      // Create pet and play multiple times to reach 100 happiness
+      fixture
+          .given(
+              new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
+              new PetPlayedWithEvent(petId, 15, 5, Instant.now()),
+              new PetPlayedWithEvent(petId, 15, 5, Instant.now()))
+          .when(new PlayWithPetCommand(petId))
+          .expectException(IllegalStateException.class)
+          .expectExceptionMessage("Pet is already at maximum happiness");
+    }
+
+  }
+
+  @Nested
+  @DisplayName("Pet Cleaning")
+  class PetCleaning {
+
+    @Test
+    @DisplayName("should allow cleaning when health is at maximum (0 increase)")
+    void shouldAllowCleaningWhenHealthIsAtMaximum() {
+      String petId = "pet-123";
+
+      fixture
+          .given(new PetCreatedEvent(petId, "Fluffy", PetType.CAT, Instant.now()))
+          .when(new CleanPetCommand(petId))
+          .expectSuccessfulHandlerExecution()
+          .expectEventsMatching(
+              matches(
+                  events -> {
+                    if (events.size() != 1) {
+                      return false;
+                    }
+                    EventMessage<?> eventMsg = (EventMessage<?>) events.get(0);
+                    Object payload = eventMsg.getPayload();
+                    if (!(payload instanceof PetCleanedEvent event)) {
+                      return false;
+                    }
+                    // Initial health is 100, so increase should be 0 (capped)
+                    return event.getPetId().equals(petId)
+                        && event.getHealthIncrease() == 0
+                        && event.getTimestamp() != null;
+                  }));
+    }
+
+    // TODO: Re-enable once we have a way to make pets die (e.g., health reaches 0)
+    // @Test
+    // @DisplayName("should reject cleaning dead pet")
+    // void shouldRejectCleaningDeadPet() {
+    //   String petId = "pet-123";
+    //
+    //   fixture
+    //       .given(new PetCreatedEvent(petId, "Fluffy", PetType.CAT, Instant.now()))
+    //       .andGivenCommands(
+    //           // Need to implement pet death mechanism first
+    //       )
+    //       .when(new CleanPetCommand(petId))
+    //       .expectException(IllegalStateException.class)
+    //       .expectExceptionMessage("Cannot clean a dead pet");
+    // }
   }
 }

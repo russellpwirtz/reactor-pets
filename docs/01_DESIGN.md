@@ -30,20 +30,23 @@
 
 ## Current Project Status
 
-**Active Phase:** Phase 1 Complete - Ready for Phase 2
+**Active Phase:** Phase 2 Complete - Ready for Phase 3
 
 **Build Status:** ✅ All checks passing (Checkstyle, SpotBugs, tests)
-**Test Coverage:** 97% (aggregate), 100% (projection), 47% overall (infrastructure excluded)
-**Test Suite:** 42 tests passing
+**Test Suite:** 59 tests passing
 
 **Available Commands:**
 - `create <name> <type>` - Create new pet (DOG, CAT, or DRAGON)
-- `feed <petId>` - Feed pet to reduce hunger
+- `feed <petId>` - Feed pet to reduce hunger (-20)
+- `play <petId>` - Play with pet (happiness +15, hunger +5)
+- `clean <petId>` - Clean pet (health +10)
 - `status <petId>` - View current pet status
+- `list` - Show all pets
+- `history <petId> [limit]` - Show event history (default 10, max 50)
 - `help` - Display command reference
 - `exit` - Terminate application
 
-**Next Steps:** Proceed with Phase 2 (Multiple Interactions & State Projections)
+**Next Steps:** Proceed with Phase 3 (Reactive Time System & Degradation)
 
 ---
 
@@ -65,44 +68,21 @@
 
 ---
 
-## Phase 2: Multiple Interactions & State Projections
+## Phase 2: Multiple Interactions & State Projections ✅ COMPLETED
 
 **Goal:** Add more interactions (play, clean) and persist projections to database.
 
-### Deliverables
-1. **New Commands & Events**
-   - `PlayWithPetCommand(petId)` → `PetPlayedWithEvent(petId, happinessIncrease, hungerIncrease, timestamp)`
-   - `CleanPetCommand(petId)` → `PetCleanedEvent(petId, healthIncrease, timestamp)`
+**Status:** Fully implemented with JPA persistence (H2), play/clean commands, event history query, and comprehensive test coverage (59 tests).
 
-2. **Enhanced Aggregate Logic**
-   - Playing increases happiness (+15) but also increases hunger (+5)
-   - Cleaning increases health (+10) if health < 100
-   - Add business rule validation (can't play if happiness already at 100, etc.)
-
-3. **Database Persistence for Projections**
-   - Add H2/PostgreSQL to docker-compose
-   - Spring Data JPA entities for `PetStatusView`
-   - Convert projection from in-memory to JPA repository
-   - Projection stores: petId, name, type, hunger, happiness, health, stage, isAlive, lastUpdated
-
-4. **Event History Query**
-   ```java
-   @QueryHandler
-   List<PetEvent> handle(GetPetHistoryQuery query) {
-     // Return list of all events for a pet (limit to last 50)
-   }
-   ```
-
-5. **CLI Enhancements**
-   - `play <petId>` - play with pet
-   - `clean <petId>` - clean pet
-   - `history <petId>` - show last 10 events
-   - `list` - show all pets
-
-### Technical Notes
-- Use `@EventSourcingHandler` vs `@EventHandler` distinction
-- Projection subscribes to event stream via tracking event processor
-- Event history retrieved via `EventStore` API
+### Completed Features
+- New commands: PlayWithPetCommand, CleanPetCommand
+- New events: PetPlayedWithEvent, PetCleanedEvent
+- Enhanced aggregate with play (happiness +15, hunger +5) and clean (health +10) actions
+- JPA persistence with H2 database for PetStatusView
+- PetHistoryProjection reading from EventStore
+- New queries: GetAllPetsQuery, GetPetHistoryQuery
+- CLI commands: play, clean, list, history
+- Integration tests for projection persistence
 
 ---
 

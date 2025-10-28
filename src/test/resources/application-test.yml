@@ -13,7 +13,7 @@ axon:
   eventhandling:
     processors:
       pet-status:
-        mode: tracking
+        mode: subscribing  # Use synchronous processing for tests to avoid timing issues
 
 # Logging Configuration for Tests
 logging:
