@@ -30,10 +30,10 @@
 
 ## Current Project Status
 
-**Active Phase:** Phase 4 Complete - Ready for Phase 5
+**Active Phase:** Phase 5 Complete - Ready for Phase 6
 
 **Build Status:** ✅ All checks passing (Checkstyle, SpotBugs, tests)
-**Test Suite:** 102 tests passing (29 new evolution system tests)
+**Test Suite:** 117 tests passing (15 new Phase 5 tests for statistics and manager service)
 
 **Available Commands:**
 - `create <name> <type>` - Create new pet (DOG, CAT, or DRAGON)
@@ -42,11 +42,13 @@
 - `clean <petId>` - Clean pet (health +10)
 - `status <petId>` - View current pet status
 - `list` - Show all pets
+- `dashboard` - Show global statistics and all alive pets
+- `leaderboard [type]` - Show top 10 pets (AGE, HAPPINESS, HEALTH)
 - `history <petId> [limit]` - Show event history (default 10, max 50)
 - `help` - Display command reference
 - `exit` - Terminate application
 
-**Next Steps:** Proceed with Phase 5 (Multiple Pets & Statistics Dashboard)
+**Next Steps:** Proceed with Phase 6 - REST API (reordered for better progression)
 
 ---
 
@@ -116,56 +118,153 @@
 
 ---
 
-## Phase 5: Multiple Pets & Statistics Dashboard
+## Phase 5: Multiple Pets & Statistics Dashboard ✅ COMPLETED
 
 **Goal:** Support multiple concurrent pets and aggregate statistics across all pets.
 
-### Deliverables
-1. **Pet Manager Service**
-   ```java
-   @Service
-   class PetManagerService {
-     // Create multiple pets
-     // Query all active pets
-     // Global statistics
-   }
-   ```
+### Completed Features
+1. **Pet Manager Service** ✅
+   - Created `PetManagerService` with methods for managing multiple pets
+   - Query all active pets
+   - Access global statistics
+   - Generate formatted dashboard and leaderboard displays
 
-2. **New Projections**
-   - **Active Pets Projection:** List of all alive pets with key stats
-   - **Statistics Projection:** 
+2. **New Projections** ✅
+   - **PetStatisticsProjection:** Tracks global statistics
      - Total pets created
      - Total pets died
-     - Average lifespan
-     - Longest-lived pet
-     - Evolution stage distribution
+     - Average lifespan (simplified calculation)
+     - Longest-lived pet (name, ID, age)
+     - Evolution stage distribution by stage
+   - Listens to PetCreatedEvent, PetDiedEvent, PetEvolvedEvent
+   - Single-row entity with ID "GLOBAL"
 
-3. **Enhanced Time Tick**
-   - Batch processing: send tick to all alive pets in single Flux pipeline
-   - Error handling: if one pet fails, others continue
-   - Use `Flux.fromIterable(alivePets).flatMap(...)` with concurrency control
+3. **Enhanced Time Tick** ✅
+   - Batch processing with `Flux.interval` and `flatMap` with concurrency of 8
+   - Error handling: `onErrorContinue` ensures one pet failure doesn't affect others
+   - Query alive pets and send tick to each in parallel
+   - Improved logging for debugging
 
-4. **CLI Dashboard**
-   - `dashboard` - shows global stats + list of all pets
-   - `leaderboard` - pets sorted by age/happiness
-   - Color-coded health indicators per pet
+4. **CLI Dashboard** ✅
+   - `dashboard` command shows global stats + all alive pets
+   - `leaderboard [type]` shows top 10 pets sorted by AGE, HAPPINESS, or HEALTH
+   - Color-coded health indicators (🔴 🟡) for critical stats
+   - Trophy emojis (🏆 🥈 🥉) for leaderboard rankings
 
-5. **Event Handler Optimizations**
-   - Use `@ProcessingGroup` annotations for parallel processing
-   - Configure tracking processors in application.yml
-   - Add replay capability for statistics projection
+5. **Event Handler Optimizations** ✅
+   - `@ProcessingGroup("pet-statistics")` on PetStatisticsProjection
+   - Configured tracking processors in `application.yml` with batch sizes
+   - Separate processing groups for pet-status and pet-statistics
 
-### Technical Considerations
-- Multiple pet aggregates managed by Axon's repository
-- Each pet has unique aggregate ID (UUID)
-- Projections listen to all pet events across aggregates
-- Consider memory: if 100s of pets, ensure projection efficiency
+### Technical Implementation
+- Multiple pet aggregates managed by Axon's repository with unique UUIDs
+- PetStatisticsProjection maintains single global statistics record
+- All projections listen to pet events across aggregates
+- Query handlers for GetStatisticsQuery and GetLeaderboardQuery
+- Comprehensive test suite with 15 new tests for Phase 5 features
 
 ---
 
-## Phase 6: Items System & Inventory Bounded Context
+## Phase 6: REST API & JSON Interface
+
+**Goal:** Expose REST API for all operations, preparing for Next.js frontend integration.
+
+**Note:** This phase has been moved up in priority (originally Phase 8) to enable web/mobile frontend development before implementing game-specific features like items and mini-games.
+
+### Deliverables
+1. **REST Controllers**
+   ```java
+   @RestController
+   @RequestMapping("/api/pets")
+   class PetController {
+     // POST /api/pets - create pet
+     // GET /api/pets/{id} - get status
+     // POST /api/pets/{id}/feed - feed
+     // POST /api/pets/{id}/play - play
+     // POST /api/pets/{id}/clean - clean
+     // GET /api/pets - list all alive pets
+   }
+
+   @RestController
+   @RequestMapping("/api/statistics")
+   class StatisticsController {
+     // GET /api/statistics - get global statistics
+     // GET /api/leaderboard?type={AGE|HAPPINESS|HEALTH} - get leaderboard
+   }
+   ```
+
+2. **Endpoints**
+   - **Pet Operations:** `/api/pets/*`
+     - `POST /api/pets` - Create new pet
+     - `GET /api/pets` - List all alive pets
+     - `GET /api/pets/{id}` - Get pet status
+     - `POST /api/pets/{id}/feed` - Feed pet
+     - `POST /api/pets/{id}/play` - Play with pet
+     - `POST /api/pets/{id}/clean` - Clean pet
+     - `GET /api/pets/{id}/history?limit=10` - Get event history
+   - **Statistics:** `/api/statistics` - Global statistics dashboard
+   - **Leaderboard:** `/api/leaderboard?type=AGE` - Top 10 pets by metric
+
+3. **WebSocket Support** (Optional - for real-time updates)
+   ```java
+   @Configuration
+   class WebSocketConfig {
+     // Subscribe to pet events in real-time
+     // Push updates to connected clients when pets' stats change
+     // Use Project Reactor's Flux for SSE or WebSocket streams
+   }
+   ```
+
+4. **DTOs & Serialization**
+   - Create request/response DTOs for clean JSON
+   - `CreatePetRequest` - name, type
+   - `PetStatusResponse` - all pet details with ASCII art optional
+   - `StatisticsResponse` - global stats
+   - `LeaderboardResponse` - list of top pets
+   - Map commands to DTOs, projections to view DTOs
+
+5. **Error Handling**
+   - Global exception handler for Axon exceptions
+   - Return proper HTTP status codes (404 for pet not found, 400 for invalid input, 500 for server errors)
+   - JSON error responses with clear messages
+   - Example: `{"error": "Pet not found", "message": "No pet exists with ID abc123", "timestamp": "2025-10-28T..."}`
+
+6. **CORS Configuration**
+   - Allow localhost:3000 for Next.js dev server
+   - Allow localhost:5173 for Vite dev server
+   - Proper headers for REST and WebSocket
+   - Configure allowed origins, methods, headers
+
+7. **API Documentation**
+   - Swagger/OpenAPI integration with Springdoc
+   - Available at `/swagger-ui.html`
+   - Interactive API documentation
+   - Example requests/responses for all endpoints
+
+### Technical Considerations
+- Keep CLI functional alongside REST API (both use same services)
+- Use `@Async` for command dispatch if needed for better responsiveness
+- Consider subscription queries for real-time updates: `subscriptionQueryResult.updates()`
+- DTOs should be lightweight and focused on API contract
+- Use Jackson for JSON serialization with proper date/time handling
+- Add validation annotations (`@Valid`, `@NotNull`, etc.) on request DTOs
+- Consider API versioning strategy (`/api/v1/pets`)
+
+### Testing Strategy
+- Controller tests with `@WebMvcTest`
+- Integration tests with `@SpringBootTest` and `MockMvc`
+- Test all HTTP methods and status codes
+- Test error scenarios (404, 400, 500)
+- Test CORS headers
+- Optional: Test WebSocket connections if implemented
+
+---
+
+## Phase 7: Items System & Inventory Bounded Context
 
 **Goal:** Introduce food types, toys, and medicine as separate bounded context with inventory management.
+
+**Note:** This phase was originally Phase 6 but moved after REST API implementation.
 
 ### Deliverables
 1. **Inventory Aggregate**
@@ -215,7 +314,7 @@
 
 ---
 
-## Phase 7: Mini-Games & Achievement System
+## Phase 8: Mini-Games & Achievement System
 
 **Goal:** Add interactive mini-games and track achievements across pet lifetime.
 
@@ -265,66 +364,6 @@
 - Achievement saga has no ending (tracks player's full lifecycle)
 - Mini-game state temporary (not persisted, just in CLI interaction)
 - Achievement projection for query display
-
----
-
-## Phase 8: REST API & JSON Interface
-
-**Goal:** Expose REST API for all operations, preparing for Next.js frontend integration.
-
-### Deliverables
-1. **REST Controllers**
-   ```java
-   @RestController
-   @RequestMapping("/api/pets")
-   class PetController {
-     // POST /api/pets - create pet
-     // GET /api/pets/{id} - get status
-     // POST /api/pets/{id}/feed - feed
-     // POST /api/pets/{id}/play - play
-     // GET /api/pets - list all
-   }
-   ```
-
-2. **Endpoints**
-   - **Pet Operations:** `/api/pets/*`
-   - **Inventory:** `/api/inventory/*`
-   - **Achievements:** `/api/achievements`
-   - **Statistics:** `/api/stats`
-   - **Events:** `/api/pets/{id}/history`
-
-3. **WebSocket Support** (Optional)
-   ```java
-   @Configuration
-   class WebSocketConfig {
-     // Subscribe to pet events in real-time
-     // Push updates to connected clients
-     // Use Project Reactor's Flux for SSE or WebSocket
-   }
-   ```
-
-4. **DTOs & Serialization**
-   - Create request/response DTOs for clean JSON
-   - Map commands to DTOs
-   - Map projections to view DTOs
-
-5. **Error Handling**
-   - Global exception handler for Axon exceptions
-   - Return proper HTTP status codes (404, 400, 500)
-   - JSON error responses with message
-
-6. **CORS Configuration**
-   - Allow localhost:3000 for Next.js dev server
-   - Proper headers for REST and WebSocket
-
-7. **API Documentation**
-   - Swagger/OpenAPI integration
-   - Available at `/swagger-ui.html`
-
-### Technical Notes
-- Keep CLI functional alongside REST API
-- Use `@Async` for command dispatch if needed
-- Subscribe to query results reactively using `subscriptionQueryResult.updates()`
 
 ---
 

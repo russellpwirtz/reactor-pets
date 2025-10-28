@@ -12,20 +12,24 @@ A virtual pet application built with Axon Framework 4.x and Project Reactor, dem
 - **Build**: Maven
 - **Code Quality**: Spotless, Checkstyle, SpotBugs, JaCoCo
 
-## Phase 4 Complete ✅
+## Phase 5 Complete ✅
 
 **Current features:**
 - Pet lifecycle with event sourcing (create, feed, play, clean)
-- Reactive time system with automatic stat degradation
+- Reactive time system with automatic stat degradation and parallel processing
 - Health deterioration and death mechanics
-- **Pet evolution system with saga pattern** (NEW)
-- **Evolution stages: EGG → BABY → TEEN → ADULT** (NEW)
-- **Evolution paths: HEALTHY vs NEGLECTED based on care** (NEW)
-- **ASCII art for different pet types and stages** (NEW)
+- Pet evolution system with saga pattern
+- Evolution stages: EGG → BABY → TEEN → ADULT
+- Evolution paths: HEALTHY vs NEGLECTED based on care
+- ASCII art for different pet types and stages
+- **Global statistics dashboard tracking all pets** (NEW)
+- **Leaderboards by age, happiness, and health** (NEW)
+- **PetManagerService for multi-pet management** (NEW)
+- **Enhanced time tick with concurrency control** (NEW)
 - JPA persistence with H2 database for projections
 - Event history queries via EventStore
-- Interactive CLI
-- **102 passing tests** with comprehensive coverage
+- Interactive CLI with dashboard and leaderboard commands
+- **117 passing tests** with comprehensive coverage
 
 ## Prerequisites
 
@@ -78,15 +82,17 @@ mvn clean verify
 ## CLI Commands
 
 ```
-create <name> <type>     - Create a new pet (DOG, CAT, DRAGON)
-feed <petId>             - Feed your pet
-play <petId>             - Play with your pet
-clean <petId>            - Clean your pet
-status <petId>           - Display current pet status (shows stage, stats, ASCII art)
-list                     - List all alive pets
-history <petId> [limit]  - Show event history
-help                     - Show help
-exit                     - Exit
+create <name> <type>      - Create a new pet (DOG, CAT, DRAGON)
+feed <petId>              - Feed your pet
+play <petId>              - Play with your pet
+clean <petId>             - Clean your pet
+status <petId>            - Display current pet status (shows stage, stats, ASCII art)
+list                      - List all alive pets
+dashboard                 - Show global statistics and all alive pets
+leaderboard [type]        - Show top 10 pets (AGE, HAPPINESS, HEALTH - default: AGE)
+history <petId> [limit]   - Show event history
+help                      - Show help
+exit                      - Exit
 ```
 
 ## Architecture
@@ -96,9 +102,13 @@ Built with **Event Sourcing**, **CQRS**, and **Saga** patterns:
 - **Aggregates:** `Pet` (write model)
 - **Commands:** Create, Feed, Play, Clean, Evolve, TimeTick
 - **Events:** PetCreated, PetFed, PetPlayedWith, PetCleaned, TimePassed, PetEvolved, PetDied
-- **Projections:** PetStatusProjection (JPA), PetHistoryProjection (EventStore)
+- **Projections:**
+  - PetStatusProjection (JPA) - individual pet state
+  - PetStatisticsProjection (JPA) - global statistics
+  - PetHistoryProjection (EventStore) - event history
 - **Saga:** PetEvolutionSaga (coordinates evolution based on age and care)
-- **Reactive:** TimeTickScheduler (Flux.interval for stat degradation)
+- **Reactive:** TimeTickScheduler (Flux.interval with concurrency control for batch processing)
+- **Services:** PetManagerService (multi-pet management and statistics)
 
 **Core Features:**
 - Event sourcing for complete pet history
@@ -127,10 +137,9 @@ See `docs/01_DESIGN.md` for phase roadmap and future features.
 ## Next Steps
 
 See `docs/01_DESIGN.md` for planned phases:
-- Phase 5: Multiple Pets & Statistics Dashboard
-- Phase 6: Items & Inventory System
-- Phase 7: Mini-Games & Achievements
-- Phase 8: REST API
+- **Phase 6 (Next): REST API** - Expose endpoints for web/mobile frontends
+- Phase 7: Items & Inventory System
+- Phase 8: Mini-Games & Achievements
 - Phase 9: Advanced Features (snapshots, upcasting, deadlines)
 
 ## License

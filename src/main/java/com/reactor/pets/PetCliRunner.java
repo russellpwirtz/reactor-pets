@@ -6,10 +6,12 @@ import com.reactor.pets.command.CreatePetCommand;
 import com.reactor.pets.command.FeedPetCommand;
 import com.reactor.pets.command.PlayWithPetCommand;
 import com.reactor.pets.query.GetAllPetsQuery;
+import com.reactor.pets.query.GetLeaderboardQuery;
 import com.reactor.pets.query.GetPetHistoryQuery;
 import com.reactor.pets.query.GetPetStatusQuery;
 import com.reactor.pets.query.PetEventDto;
 import com.reactor.pets.query.PetStatusView;
+import com.reactor.pets.service.PetManagerService;
 import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
@@ -31,11 +33,12 @@ public class PetCliRunner implements CommandLineRunner {
 
   private final CommandGateway commandGateway;
   private final QueryGateway queryGateway;
+  private final PetManagerService petManagerService;
 
   @Override
   public void run(String... args) {
     System.out.println("\n===========================================");
-    System.out.println("   Welcome to Reactor Pets (Phase 2)");
+    System.out.println("   Welcome to Reactor Pets (Phase 5)");
     System.out.println("===========================================\n");
 
     printHelp();
@@ -74,6 +77,12 @@ public class PetCliRunner implements CommandLineRunner {
               break;
             case "history":
               handleHistory(parts);
+              break;
+            case "dashboard":
+              handleDashboard();
+              break;
+            case "leaderboard":
+              handleLeaderboard(parts);
               break;
             case "help":
               printHelp();
@@ -343,6 +352,39 @@ public class PetCliRunner implements CommandLineRunner {
         .join();
   }
 
+  private void handleDashboard() {
+    try {
+      String dashboard = petManagerService.getDashboard();
+      System.out.println(dashboard);
+    } catch (Exception e) {
+      System.out.println("Failed to get dashboard: " + e.getMessage());
+      log.error("Dashboard query failed", e);
+    }
+  }
+
+  private void handleLeaderboard(String[] parts) {
+    GetLeaderboardQuery.LeaderboardType type = GetLeaderboardQuery.LeaderboardType.AGE;
+
+    if (parts.length >= 2) {
+      String typeStr = parts[1].toUpperCase();
+      try {
+        type = GetLeaderboardQuery.LeaderboardType.valueOf(typeStr);
+      } catch (IllegalArgumentException e) {
+        System.out.println("Invalid leaderboard type: " + typeStr);
+        System.out.println("Valid types: AGE, HAPPINESS, HEALTH");
+        System.out.println("Using default: AGE");
+      }
+    }
+
+    try {
+      String leaderboard = petManagerService.getLeaderboardDisplay(type);
+      System.out.println(leaderboard);
+    } catch (Exception e) {
+      System.out.println("Failed to get leaderboard: " + e.getMessage());
+      log.error("Leaderboard query failed", e);
+    }
+  }
+
   private void printHelp() {
     System.out.println(
         """
@@ -355,6 +397,8 @@ public class PetCliRunner implements CommandLineRunner {
                 status <petId>           - Display current pet status
                 list                     - List all pets
                 history <petId> [limit]  - Show event history for a pet (default 10, max 50)
+                dashboard                - Show global statistics and all alive pets
+                leaderboard [type]       - Show top 10 pets (types: AGE, HAPPINESS, HEALTH, default: AGE)
                 help                     - Show this help message
                 exit                     - Exit the application
 
@@ -364,8 +408,9 @@ public class PetCliRunner implements CommandLineRunner {
                   > play <petId>
                   > clean <petId>
                   > status <petId>
-                  > list
-                  > history <petId> 20
+                  > dashboard
+                  > leaderboard AGE
+                  > leaderboard HAPPINESS
                 """);
   }
 }

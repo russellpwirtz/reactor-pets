@@ -25,6 +25,12 @@ axon:
     processors:
       pet-status:
         mode: tracking
+        source: eventBus
+        batch-size: 10
+      pet-statistics:
+        mode: tracking
+        source: eventBus
+        batch-size: 10
 
 logging:
   level:

@@ -36,9 +36,15 @@ public class TimeTickScheduler {
 
     subscription =
         Flux.interval(Duration.ofSeconds(10), Duration.ofSeconds(10))
-            .doOnNext(tick -> log.debug("Time tick #{} triggered", tickCounter.get()))
+            .doOnNext(
+                tick -> {
+                  long currentTick = tickCounter.get();
+                  log.debug("Time tick #{} triggered", currentTick);
+                })
             .flatMap(tick -> queryForAlivePets())
-            .flatMap(this::sendTimeTick)
+            .flatMap(
+                this::sendTimeTick,
+                8) // Concurrency: process up to 8 pets in parallel for better throughput
             .doOnError(
                 error ->
                     log.error("Error in time tick processing: {}", error.getMessage(), error))
@@ -50,7 +56,7 @@ public class TimeTickScheduler {
                 error -> log.error("Fatal error in time flow: {}", error.getMessage(), error),
                 () -> log.info("Time flow completed (should not happen)"));
 
-    log.info("Time flow scheduler started successfully");
+    log.info("Time flow scheduler started successfully with concurrency control");
   }
 
   @PreDestroy
