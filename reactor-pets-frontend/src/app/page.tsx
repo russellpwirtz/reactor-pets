@@ -7,9 +7,12 @@ import { StatsOverview } from '@/components/stats/stats-overview';
 import { StageDistribution } from '@/components/stats/stage-distribution';
 import { usePets } from '@/hooks/use-pets';
 import { Badge } from '@/components/ui/badge';
+import { XPCard } from '@/components/progression/xp-card';
+import { useProgression } from '@/hooks/use-progression';
 
 export default function HomePage() {
   const { data: pets, isLoading } = usePets();
+  const { data: progression } = useProgression();
 
   // Get recent pets (up to 3)
   const recentPets = pets?.slice(0, 3) || [];
@@ -40,6 +43,9 @@ export default function HomePage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Player Progression */}
+        {progression && <XPCard {...progression} />}
 
         {/* Global Statistics */}
         <div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { use } from 'react';
+import { use, useState } from 'react';
 import { usePet } from '@/hooks/use-pets';
 import { PetDetailView } from '@/components/pets/pet-detail-view';
 import { PetDetailSkeleton } from '@/components/pets/pet-detail-skeleton';
@@ -9,10 +9,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { EquipmentSlots } from '@/components/equipment/equipment-slots';
+import { EquipmentInventoryDialog } from '@/components/equipment/equipment-inventory-dialog';
+import { usePetEquipment, useEquipmentInventory, useEquipItem, useUnequipItem } from '@/hooks/use-equipment';
+import { EquipmentSlot } from '@/lib/types';
 
 export default function PetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { data: pet, isLoading } = usePet(id);
+  const { data: equipment } = usePetEquipment(id);
+  const { data: inventory } = useEquipmentInventory();
+  const equipItem = useEquipItem();
+  const unequipItem = useUnequipItem();
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<EquipmentSlot | null>(null);
+
+  const handleEquipClick = (slot: EquipmentSlot) => {
+    setSelectedSlot(slot);
+    setIsDialogOpen(true);
+  };
+
+  const handleUnequip = (slot: EquipmentSlot) => {
+    unequipItem.mutate({ petId: id, slot });
+  };
+
+  const handleEquipItem = (itemId: string) => {
+    if (selectedSlot) {
+      equipItem.mutate({ petId: id, slot: selectedSlot, itemId });
+      setIsDialogOpen(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -54,11 +81,31 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="equipment">Equipment</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
           <PetDetailView pet={pet} />
+        </TabsContent>
+
+        <TabsContent value="equipment" className="mt-6">
+          {equipment && (
+            <>
+              <EquipmentSlots
+                {...equipment}
+                onEquip={handleEquipClick}
+                onUnequip={handleUnequip}
+              />
+              <EquipmentInventoryDialog
+                open={isDialogOpen}
+                onClose={() => setIsDialogOpen(false)}
+                slot={selectedSlot}
+                items={inventory?.items || []}
+                onEquipItem={handleEquipItem}
+              />
+            </>
+          )}
         </TabsContent>
 
         <TabsContent value="history" className="mt-6">

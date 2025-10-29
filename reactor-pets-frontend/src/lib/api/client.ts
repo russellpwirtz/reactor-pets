@@ -6,6 +6,11 @@ import type {
   LeaderboardEntry,
   LeaderboardType,
   PetEvent,
+  PlayerProgression,
+  ShopItem,
+  EquippedItems,
+  EquipmentInventory,
+  EquipmentSlot,
 } from '../types';
 
 class ApiError extends Error {
@@ -84,6 +89,35 @@ export const api = {
       value: type === 'AGE' ? pet.age : type === 'HAPPINESS' ? pet.happiness : pet.health,
     }));
   },
+
+  // Progression
+  getProgression: () => fetchApi<PlayerProgression>('/progression'),
+
+  // Shop
+  getShopItems: () => fetchApi<ShopItem[]>('/shop/items'),
+  getShopUpgrades: () => fetchApi<ShopItem[]>('/shop/upgrades'),
+  purchaseEquipment: (equipmentType: string) =>
+    fetchApi<void>(`/shop/purchase/equipment/${equipmentType}`, { method: 'POST' }),
+  purchaseUpgrade: (upgradeType: string) =>
+    fetchApi<void>(`/shop/purchase/upgrade/${upgradeType}`, { method: 'POST' }),
+  purchaseConsumable: (consumableType: string) =>
+    fetchApi<void>(`/shop/purchase/consumable/${consumableType}`, { method: 'POST' }),
+
+  // Equipment
+  getPetEquipment: (petId: string) =>
+    fetchApi<EquippedItems>(`/pets/${petId}/equipment`),
+  getEquipmentInventory: () =>
+    fetchApi<EquipmentInventory>('/inventory/equipment'),
+  equipItem: (petId: string, slot: EquipmentSlot, itemId: string) =>
+    fetchApi<void>(`/pets/${petId}/equipment/equip`, {
+      method: 'POST',
+      body: JSON.stringify({ slot, itemId }),
+    }),
+  unequipItem: (petId: string, slot: EquipmentSlot) =>
+    fetchApi<void>(`/pets/${petId}/equipment/unequip`, {
+      method: 'POST',
+      body: JSON.stringify({ slot }),
+    }),
 };
 
 export { ApiError };

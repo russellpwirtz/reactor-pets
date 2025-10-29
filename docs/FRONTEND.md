@@ -1,9 +1,31 @@
 # Reactor Pets - Frontend Application
 ## Next.js + TypeScript Implementation Plan
 
-**Current Status:** Phases 1-4 Complete ✅ | Next: Phase 5 (Items & Inventory UI)
+**Last Updated:** 2025-10-29
+**Current Status:** Phases 1-7 Complete ✅ | Next: Phase 8 (Consumables UI - waiting on backend)
 
-**Prerequisites:** This document assumes the backend REST API (Phase 6) is complete and running. The frontend will consume the API endpoints defined in `06_REST_API.md`.
+**Backend Alignment:**
+- ✅ Backend Phase 7A Complete (XP System) - **Frontend Phase 5 Complete ✅**
+- ✅ Backend Phase 7B Complete (Equipment System) - **Frontend Phase 6 Complete ✅**
+- ✅ Backend Phase 7C Complete (Shop System) - **Frontend Phase 7 Complete ✅**
+- 🚧 Backend Phase 7D In Progress (Consumables) - **Frontend Phase 8 pending backend REST endpoints**
+
+**Prerequisites:** This document assumes the backend REST API is running with Phase 7A-7C features complete. The frontend consumes the REST endpoints for XP, equipment, shop, and consumables.
+
+---
+
+## Quick Reference
+
+### Frontend-Backend Mapping
+
+| Frontend Phase | Backend Phase | Status | Description |
+|----------------|---------------|--------|-------------|
+| Phase 1-4 ✅ | Phases 1-6 ✅ | Complete | Foundation, pets, stats, real-time updates |
+| **Phase 5 ✅** | **7A ✅** | **Complete** | XP & Progression display |
+| **Phase 6 ✅** | **7B ✅** | **Complete** | Equipment management UI |
+| **Phase 7 ✅** | **7C ✅** | **Complete** | Shop interface |
+| Phase 8 | 7D 🚧 | Waiting on backend | Consumables & inventory |
+| Phase 9+ | 7E-9 📋 | Future | Achievements, chat, RPG |
 
 ---
 
@@ -33,12 +55,16 @@ reactor-pets-frontend/
 │   │   ├── layout.tsx         # Root layout
 │   │   ├── page.tsx           # Home/Dashboard
 │   │   ├── pets/              # Pet management routes
+│   │   ├── shop/              # Shop page
 │   │   ├── leaderboard/       # Leaderboard view
 │   │   └── api/               # API route handlers (if needed)
 │   ├── components/            # React components
 │   │   ├── ui/               # shadcn/ui components
 │   │   ├── pets/             # Pet-specific components
 │   │   ├── stats/            # Statistics components
+│   │   ├── progression/      # XP and progression components
+│   │   ├── shop/             # Shop components
+│   │   ├── equipment/        # Equipment components
 │   │   └── layout/           # Layout components
 │   ├── lib/                  # Utilities and helpers
 │   │   ├── api/              # API client
@@ -55,18 +81,18 @@ reactor-pets-frontend/
 
 ## Completed Phases ✅
 
-### Phase 1: Project Foundation & Setup
+### Phase 1: Project Foundation & Setup ✅
 Next.js 15 project with TypeScript, Tailwind CSS, shadcn/ui, and React Query. Type-safe API client, environment configuration, and all core UI components installed.
 
 **Location:** `/reactor-pets-frontend/`
 
-### Phase 2: Pet Management UI
+### Phase 2: Pet Management UI ✅
 Full CRUD operations for pets with real-time polling updates. Pet list/detail views, interaction buttons (feed/play/clean), event history, and ASCII art display.
 
 **Components:** `src/components/pets/*`, `src/hooks/use-pets.ts`
 **Pages:** `/pets`, `/pets/[id]`
 
-### Phase 3: Dashboard & Statistics
+### Phase 3: Dashboard & Statistics ✅
 Global statistics dashboard with quick actions, stats overview cards, stage distribution chart, and leaderboard with Age/Happiness/Health sorting. Navigation bar with active page highlighting. "Alive Only" toggle filter for both leaderboard and My Pets pages.
 
 **Components:** `src/components/stats/*`, `src/components/layout/nav-bar.tsx`
@@ -74,1365 +100,202 @@ Global statistics dashboard with quick actions, stats overview cards, stage dist
 **Pages:** `/` (dashboard), `/leaderboard`
 **Backend Enhancement:** Added `aliveOnly` parameter to leaderboard API
 
-### Phase 4: Real-time Updates & Polish
+### Phase 4: Real-time Updates & Polish ✅
 Real-time update indicators, smooth animations with Framer Motion, loading skeletons, error boundaries, and toast notifications for critical pet stats. Enhanced pet detail view with animated stat bars and automatic notifications.
 
 **Components:** `src/components/ui/update-indicator.tsx`, `src/components/ui/skeleton.tsx`, `src/components/error-boundary.tsx`, `src/components/pets/animated-stat-bar.tsx`, `src/components/pets/pet-card-skeleton.tsx`, `src/components/pets/pet-detail-skeleton.tsx`
 **Hooks:** `src/hooks/use-pet-notifications.ts`
 **Enhancements:** Updated layout with UpdateIndicator, enhanced PetDetailView with animations, improved loading states across all pages
 
----
+### Phase 5: XP & Progression UI ✅
 
-## Phase 5: Items & Inventory UI (Future-Ready)
+**Status:** ✅ Complete
+**Backend:** Phase 7A Complete (PlayerProgression aggregate, XP earning from interactions)
 
-**Goal:** Create UI components for inventory management, item usage, and preparation for Phase 7 backend (Items System).
+**Implemented Features:**
+- Player progression types (`PlayerProgression`)
+- `XPCard` component displaying current XP, lifetime XP, multiplier, and spending stats
+- `useProgression` hook with automatic polling (5-second intervals)
+- Integration with dashboard page
+- Real-time XP updates from pet interactions
 
-**Duration Estimate:** Single Claude Code session
+**Components:**
+- `src/lib/types/progression.ts` - Type definitions
+- `src/components/progression/xp-card.tsx` - XP display card
+- `src/hooks/use-progression.ts` - Progression data hook
 
-### Deliverables
+**Key Features:**
+- Visual XP multiplier badge
+- Highest multiplier tracking
+- Total XP spent tracking
+- Automatic refresh on interactions
 
-1. **Inventory Types**
-   ```typescript
-   // src/lib/types/inventory.ts
-   export type ItemType =
-     | 'APPLE'
-     | 'PIZZA'
-     | 'MEDICINE'
-     | 'BALL'
-     | 'ROBOT'
-     // Future items
-     | 'HEALTH_POTION'
-     | 'MANA_POTION'
-     | 'RESPEC_TOKEN'
-     | 'SKILL_BOOK'
-     | 'ENCHANTED_COLLAR'
-     | 'IRON_ARMOR'
-     | 'SPEED_BOOTS';
-
-   export interface InventoryItem {
-     itemType: ItemType;
-     quantity: number;
-     description: string;
-     rarity?: 'COMMON' | 'UNCOMMON' | 'RARE' | 'LEGENDARY';
-   }
-
-   export interface Inventory {
-     inventoryId: string;
-     petId: string;
-     items: InventoryItem[];
-     lastUpdated: string;
-   }
-   ```
-
-2. **Inventory Component**
-   ```typescript
-   // src/components/inventory/inventory-grid.tsx
-   'use client';
-
-   import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-   import { Badge } from '@/components/ui/badge';
-   import { Button } from '@/components/ui/button';
-   import { InventoryItem } from '@/lib/types/inventory';
-
-   interface InventoryGridProps {
-     items: InventoryItem[];
-     onUseItem: (itemType: string) => void;
-   }
-
-   const itemEmojis: Record<string, string> = {
-     APPLE: '🍎',
-     PIZZA: '🍕',
-     MEDICINE: '💊',
-     BALL: '⚽',
-     ROBOT: '🤖',
-     HEALTH_POTION: '🧪',
-     MANA_POTION: '🔮',
-     RESPEC_TOKEN: '📜',
-     SKILL_BOOK: '📚',
-     ENCHANTED_COLLAR: '📿',
-     IRON_ARMOR: '🛡️',
-     SPEED_BOOTS: '👢',
-   };
-
-   export function InventoryGrid({ items, onUseItem }: InventoryGridProps) {
-     return (
-       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-         {items.map((item) => (
-           <Card key={item.itemType} className="hover:shadow-md transition-shadow">
-             <CardHeader className="pb-3">
-               <div className="text-center text-4xl mb-2">
-                 {itemEmojis[item.itemType] || '📦'}
-               </div>
-               <CardTitle className="text-sm text-center">
-                 {item.itemType.replace('_', ' ')}
-               </CardTitle>
-             </CardHeader>
-             <CardContent className="space-y-2">
-               <div className="flex items-center justify-between">
-                 <Badge variant="outline">x{item.quantity}</Badge>
-                 {item.rarity && (
-                   <Badge
-                     variant={
-                       item.rarity === 'LEGENDARY'
-                         ? 'default'
-                         : item.rarity === 'RARE'
-                         ? 'secondary'
-                         : 'outline'
-                     }
-                   >
-                     {item.rarity}
-                   </Badge>
-                 )}
-               </div>
-               <p className="text-xs text-muted-foreground">
-                 {item.description}
-               </p>
-               <Button
-                 size="sm"
-                 className="w-full"
-                 onClick={() => onUseItem(item.itemType)}
-                 disabled={item.quantity === 0}
-               >
-                 Use
-               </Button>
-             </CardContent>
-           </Card>
-         ))}
-       </div>
-     );
-   }
-   ```
-
-3. **Inventory Page**
-   ```typescript
-   // src/app/inventory/page.tsx
-   'use client';
-
-   import { InventoryGrid } from '@/components/inventory/inventory-grid';
-   import { Button } from '@/components/ui/button';
-   import { Alert, AlertDescription } from '@/components/ui/alert';
-
-   export default function InventoryPage() {
-     // Mock data until backend Phase 7 is complete
-     const mockInventory = [
-       {
-         itemType: 'APPLE' as const,
-         quantity: 10,
-         description: 'Reduces hunger by 15',
-         rarity: 'COMMON' as const,
-       },
-       {
-         itemType: 'BALL' as const,
-         quantity: 5,
-         description: 'Increases happiness by 10',
-         rarity: 'COMMON' as const,
-       },
-       {
-         itemType: 'MEDICINE' as const,
-         quantity: 2,
-         description: 'Restores health by 20',
-         rarity: 'UNCOMMON' as const,
-       },
-     ];
-
-     const handleUseItem = (itemType: string) => {
-       console.log('Using item:', itemType);
-       // TODO: Implement when backend Phase 7 is complete
-       alert('Item system coming in Phase 7!');
-     };
-
-     return (
-       <div className="container mx-auto py-8">
-         <div className="flex items-center justify-between mb-8">
-           <h1 className="text-4xl font-bold">Inventory</h1>
-           <Button variant="outline">Shop (Coming Soon)</Button>
-         </div>
-
-         <Alert className="mb-6">
-           <AlertDescription>
-             Full inventory system will be available after backend Phase 7 is
-             implemented. This is a preview of the UI.
-           </AlertDescription>
-         </Alert>
-
-         <InventoryGrid items={mockInventory} onUseItem={handleUseItem} />
-       </div>
-     );
-   }
-   ```
-
-4. **Item Usage Dialog**
-   ```typescript
-   // src/components/inventory/use-item-dialog.tsx
-   'use client';
-
-   import {
-     Dialog,
-     DialogContent,
-     DialogHeader,
-     DialogTitle,
-   } from '@/components/ui/dialog';
-   import { Button } from '@/components/ui/button';
-   import { InventoryItem } from '@/lib/types/inventory';
-
-   interface UseItemDialogProps {
-     item: InventoryItem | null;
-     open: boolean;
-     onClose: () => void;
-     onConfirm: () => void;
-   }
-
-   export function UseItemDialog({
-     item,
-     open,
-     onClose,
-     onConfirm,
-   }: UseItemDialogProps) {
-     if (!item) return null;
-
-     return (
-       <Dialog open={open} onOpenChange={onClose}>
-         <DialogContent>
-           <DialogHeader>
-             <DialogTitle>Use {item.itemType.replace('_', ' ')}?</DialogTitle>
-           </DialogHeader>
-           <div className="space-y-4">
-             <p className="text-sm text-muted-foreground">{item.description}</p>
-             <div className="flex gap-2">
-               <Button onClick={onConfirm} className="flex-1">
-                 Use Item
-               </Button>
-               <Button onClick={onClose} variant="outline" className="flex-1">
-                 Cancel
-               </Button>
-             </div>
-           </div>
-         </DialogContent>
-       </Dialog>
-     );
-   }
-   ```
-
-### Testing Checklist
-
-- [ ] Inventory grid displays items correctly
-- [ ] Item quantities show correctly
-- [ ] Rarity badges display with correct styling
-- [ ] Use item button is disabled when quantity is 0
-- [ ] Use item dialog appears on button click
-- [ ] Alert banner explains Phase 7 requirement
-
-### Technical Notes
-
-- UI components ready for backend integration
-- Mock data used until backend Phase 7 complete
-- Item emojis provide visual identification
-- Rarity system styled consistently
-- Dialog confirms item usage action
+**Backend Endpoints:**
+- `GET /api/progression` - Get player progression stats
 
 ---
 
-## Phase 6: Mini-Games & Achievements UI
+### Phase 6: Equipment System UI ✅
+
+**Status:** ✅ Complete
+**Backend:** Phase 7B Complete (Equipment aggregate, equip/unequip commands)
+
+**Implemented Features:**
+- Equipment types (9 items across 3 slots: Food Bowl, Toy, Accessory)
+- Equipment slots display with stat modifiers
+- Equipment inventory dialog
+- Equip/unequip functionality per pet
+- Real-time equipment updates via polling
+
+**Components:**
+- `src/lib/types/equipment.ts` - Type definitions
+- `src/components/equipment/equipment-slots.tsx` - Equipment slot display
+- `src/components/equipment/equipment-inventory-dialog.tsx` - Inventory selection dialog
+- `src/hooks/use-equipment.ts` - Equipment hooks (usePetEquipment, useEquipmentInventory, useEquipItem, useUnequipItem)
+
+**Key Features:**
+- Visual slot icons (🍽️ Food Bowl, 🎾 Toy, 📿 Accessory)
+- Modifier display (hunger decay, food efficiency, play efficiency, etc.)
+- Inventory filtering by slot type
+- Toast notifications for equip/unequip actions
+- Equipment tab added to pet detail page (`/pets/[id]`)
+
+**Backend Endpoints:**
+- `GET /api/pets/{id}/equipment` - Get pet's equipped items
+- `POST /api/pets/{id}/equipment/equip` - Equip item to slot
+- `POST /api/pets/{id}/equipment/unequip` - Unequip item from slot
+- `GET /api/inventory/equipment` - Get player's equipment inventory
+
+---
+
+### Phase 7: Shop System UI ✅
+
+**Status:** ✅ Complete
+**Backend:** Phase 7C Complete (Shop catalog, purchase saga, XP deduction)
+
+**Implemented Features:**
+- Shop types and catalog display
+- Equipment and permanent upgrades tabs
+- Purchase validation (XP balance checking)
+- XP balance display on shop page
+- Toast notifications for purchases
+- Shop link added to navigation bar
+
+**Components:**
+- `src/lib/types/shop.ts` - Type definitions
+- `src/components/shop/shop-grid.tsx` - Shop item grid
+- `src/hooks/use-shop.ts` - Shop hooks (useShopItems, useShopUpgrades, usePurchaseEquipment, usePurchaseUpgrade, usePurchaseConsumable)
+- `src/app/shop/page.tsx` - Shop page
+
+**Key Features:**
+- Item icons for visual identification
+- XP cost display with affordability validation
+- Disabled purchase buttons when insufficient XP
+- Automatic XP balance refresh after purchases
+- Separate tabs for equipment and permanent upgrades
+- Item descriptions and slot information
+
+**Backend Endpoints:**
+- `GET /api/shop/items` - Get equipment items for sale
+- `GET /api/shop/upgrades` - Get permanent upgrades
+- `POST /api/shop/purchase/equipment/{equipmentType}` - Buy equipment
+- `POST /api/shop/purchase/upgrade/{upgradeType}` - Buy upgrade
+- `POST /api/shop/purchase/consumable/{consumableType}` - Buy consumable
+
+**Shop Items:**
+- **Equipment (9 items):** Basic Bowl, Large Bowl, Premium Bowl, Simple Ball, Interactive Toy, Luxury Toy Set, Basic Collar, Comfort Bed, Health Monitor
+- **Permanent Upgrades (8 items):** Better Metabolism, Cheerful Disposition, Strong Genetics, Gourmet Kitchen, Rapid Hatcher, Multi-Pet Licenses (I, II, III)
+
+---
+
+## Phase 8: Consumables & Inventory UI
+
+**Goal:** Display consumable inventory, use consumables on pets, and shop integration. Backend Phase 7D in progress.
+
+**Backend Status:** 🚧 Phase 7D In Progress (Consumables implemented, REST/CLI pending)
+**Duration Estimate:** Single Claude Code session (ready to implement once backend complete)
+
+### Backend Endpoints (When Complete)
+- `GET /api/inventory/consumables` - Get consumable inventory
+- `POST /api/pets/{id}/consumable/{type}` - Use consumable on pet
+- Consumables purchasable via `/api/shop/purchase/consumable/{type}`
+
+### Planned Deliverables
+
+1. **Consumable Types**
+   ```typescript
+   // src/lib/types/consumables.ts
+   export type ConsumableType =
+     | 'APPLE'        // 50 XP - Restores 15 hunger
+     | 'PIZZA'        // 100 XP - Restores 30 hunger
+     | 'GOURMET_MEAL' // 200 XP - Restores 50 hunger
+     | 'BASIC_MEDICINE'    // 100 XP - Restores 20 health
+     | 'ADVANCED_MEDICINE' // 200 XP - Restores 40 health, cures sickness
+     | 'COOKIE'       // 75 XP - Restores 15 happiness
+     | 'PREMIUM_TOY'; // 150 XP - Restores 30 happiness
+   ```
+
+2. **Consumables Grid Component** - Display consumable inventory with quantity tracking
+3. **Use Consumable Dialog** - Select consumable and apply to pet
+4. **Inventory Page** - View all consumables with use functionality
+5. **Add consumables to shop** - Purchase consumables with XP
+
+### Key Features (Planned)
+- Consumable inventory with quantity display
+- Category badges (Food, Medicine, Treat)
+- Use button with quantity validation
+- Equipment modifiers apply to consumables (FOOD_EFFICIENCY, PLAY_EFFICIENCY)
+- Sickness indicator on pet detail
+- Advanced Medicine cures sickness
+
+---
+
+## Phase 9: Mini-Games & Achievements UI
 
 **Goal:** Create interactive mini-game interfaces and achievement display, preparing for Phase 8 backend.
 
+**Backend Status:** ⏳ Pending (Backend Phase 8)
 **Duration Estimate:** Single Claude Code session
 
-### Deliverables
-
-1. **Achievement Types**
-   ```typescript
-   // src/lib/types/achievements.ts
-   export interface Achievement {
-     id: string;
-     name: string;
-     description: string;
-     category: 'CARE' | 'SURVIVAL' | 'EVOLUTION' | 'SOCIAL' | 'GAME';
-     icon: string;
-     unlocked: boolean;
-     unlockedAt?: string;
-     progress?: number;
-     maxProgress?: number;
-   }
-
-   export interface AchievementCategory {
-     category: string;
-     achievements: Achievement[];
-   }
-   ```
-
-2. **Achievements Page**
-   ```typescript
-   // src/app/achievements/page.tsx
-   'use client';
-
-   import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-   import { Badge } from '@/components/ui/badge';
-   import { Progress } from '@/components/ui/progress';
-   import { Lock, Check } from 'lucide-react';
-
-   export default function AchievementsPage() {
-     // Mock data until backend Phase 8
-     const mockAchievements = [
-       {
-         id: 'first-pet',
-         name: 'First Pet',
-         description: 'Create your first pet',
-         category: 'CARE' as const,
-         icon: '🐾',
-         unlocked: true,
-         unlockedAt: '2025-10-28T10:00:00Z',
-       },
-       {
-         id: 'veteran-owner',
-         name: 'Veteran Owner',
-         description: 'Create 10 pets',
-         category: 'CARE' as const,
-         icon: '👑',
-         unlocked: false,
-         progress: 3,
-         maxProgress: 10,
-       },
-       {
-         id: 'perfect-care',
-         name: 'Perfect Care',
-         description: 'Raise a pet to adult with all stats above 90',
-         category: 'EVOLUTION' as const,
-         icon: '⭐',
-         unlocked: false,
-       },
-       {
-         id: 'survivor',
-         name: 'Survivor',
-         description: 'Keep a pet alive for 500 ticks',
-         category: 'SURVIVAL' as const,
-         icon: '🏆',
-         unlocked: false,
-         progress: 125,
-         maxProgress: 500,
-       },
-     ];
-
-     const groupedAchievements = mockAchievements.reduce((acc, achievement) => {
-       if (!acc[achievement.category]) {
-         acc[achievement.category] = [];
-       }
-       acc[achievement.category].push(achievement);
-       return acc;
-     }, {} as Record<string, typeof mockAchievements>);
-
-     return (
-       <div className="container mx-auto py-8">
-         <h1 className="text-4xl font-bold mb-8">Achievements</h1>
-
-         <div className="space-y-6">
-           {Object.entries(groupedAchievements).map(([category, achievements]) => (
-             <div key={category}>
-               <h2 className="text-2xl font-semibold mb-4">{category}</h2>
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                 {achievements.map((achievement) => (
-                   <Card
-                     key={achievement.id}
-                     className={achievement.unlocked ? 'border-primary' : ''}
-                   >
-                     <CardHeader>
-                       <div className="flex items-start justify-between">
-                         <div className="flex items-center gap-2">
-                           <span className="text-3xl">{achievement.icon}</span>
-                           <div>
-                             <CardTitle className="text-lg">
-                               {achievement.name}
-                             </CardTitle>
-                           </div>
-                         </div>
-                         {achievement.unlocked ? (
-                           <Check className="h-5 w-5 text-primary" />
-                         ) : (
-                           <Lock className="h-5 w-5 text-muted-foreground" />
-                         )}
-                       </div>
-                     </CardHeader>
-                     <CardContent className="space-y-2">
-                       <p className="text-sm text-muted-foreground">
-                         {achievement.description}
-                       </p>
-
-                       {achievement.unlocked && achievement.unlockedAt && (
-                         <Badge variant="secondary">
-                           Unlocked {new Date(achievement.unlockedAt).toLocaleDateString()}
-                         </Badge>
-                       )}
-
-                       {!achievement.unlocked &&
-                         achievement.progress !== undefined &&
-                         achievement.maxProgress && (
-                           <div>
-                             <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                               <span>Progress</span>
-                               <span>
-                                 {achievement.progress}/{achievement.maxProgress}
-                               </span>
-                             </div>
-                             <Progress
-                               value={(achievement.progress / achievement.maxProgress) * 100}
-                             />
-                           </div>
-                         )}
-                     </CardContent>
-                   </Card>
-                 ))}
-               </div>
-             </div>
-           ))}
-         </div>
-       </div>
-     );
-   }
-   ```
-
-3. **Mini-Game Components**
-   ```typescript
-   // src/components/games/game-card.tsx
-   'use client';
-
-   import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-   import { Button } from '@/components/ui/button';
-   import { Badge } from '@/components/ui/badge';
-
-   interface GameCardProps {
-     title: string;
-     description: string;
-     xpReward: number;
-     cooldown?: number;
-     icon: string;
-     onPlay: () => void;
-     disabled?: boolean;
-   }
-
-   export function GameCard({
-     title,
-     description,
-     xpReward,
-     cooldown,
-     icon,
-     onPlay,
-     disabled,
-   }: GameCardProps) {
-     return (
-       <Card>
-         <CardHeader>
-           <div className="flex items-center gap-3">
-             <span className="text-4xl">{icon}</span>
-             <div>
-               <CardTitle>{title}</CardTitle>
-               <Badge variant="secondary" className="mt-1">
-                 +{xpReward} XP
-               </Badge>
-             </div>
-           </div>
-         </CardHeader>
-         <CardContent className="space-y-4">
-           <p className="text-sm text-muted-foreground">{description}</p>
-
-           {cooldown && cooldown > 0 && (
-             <p className="text-sm text-yellow-500">
-               Available in {cooldown} minutes
-             </p>
-           )}
-
-           <Button onClick={onPlay} disabled={disabled || (cooldown && cooldown > 0)} className="w-full">
-             Play Now
-           </Button>
-         </CardContent>
-       </Card>
-     );
-   }
-   ```
-
-4. **Games Page**
-   ```typescript
-   // src/app/games/page.tsx
-   'use client';
-
-   import { GameCard } from '@/components/games/game-card';
-   import { Alert, AlertDescription } from '@/components/ui/alert';
-
-   export default function GamesPage() {
-     const games = [
-       {
-         id: 'guess',
-         title: 'Guess Game',
-         description: 'Guess a number between 1-5. Success increases happiness!',
-         xpReward: 30,
-         icon: '🎲',
-       },
-       {
-         id: 'reflex',
-         title: 'Reflex Game',
-         description: 'Test your reaction time. Fast reactions earn more happiness!',
-         xpReward: 30,
-         icon: '⚡',
-       },
-       {
-         id: 'emotional',
-         title: 'Emotional Intelligence',
-         description: 'Interpret your pet\'s needs through subtle hints',
-         xpReward: 30,
-         icon: '🧠',
-       },
-     ];
-
-     const handlePlayGame = (gameId: string) => {
-       alert(`${gameId} game coming in Phase 8!`);
-     };
-
-     return (
-       <div className="container mx-auto py-8">
-         <h1 className="text-4xl font-bold mb-8">Mini-Games</h1>
-
-         <Alert className="mb-6">
-           <AlertDescription>
-             Mini-games will be fully functional after backend Phase 8. This is a
-             preview of the UI.
-           </AlertDescription>
-         </Alert>
-
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-           {games.map((game) => (
-             <GameCard
-               key={game.id}
-               title={game.title}
-               description={game.description}
-               xpReward={game.xpReward}
-               icon={game.icon}
-               onPlay={() => handlePlayGame(game.id)}
-             />
-           ))}
-         </div>
-       </div>
-     );
-   }
-   ```
-
-5. **Update Navigation**
-   ```typescript
-   // src/components/layout/nav-bar.tsx (updated)
-   const navItems = [
-     { href: '/', label: 'Dashboard' },
-     { href: '/pets', label: 'My Pets' },
-     { href: '/inventory', label: 'Inventory' },
-     { href: '/games', label: 'Games' },
-     { href: '/achievements', label: 'Achievements' },
-     { href: '/leaderboard', label: 'Leaderboard' },
-   ];
-   ```
-
-### Testing Checklist
-
-- [ ] Achievements page displays categories correctly
-- [ ] Locked/unlocked achievements styled differently
-- [ ] Progress bars show for incomplete achievements
-- [ ] Games page displays mini-game cards
-- [ ] XP rewards displayed correctly
-- [ ] Navigation includes new pages
-- [ ] Alert banners explain Phase 8 requirement
-
-### Technical Notes
-
-- Achievement progress tracked with progress bars
-- Games show XP rewards and cooldowns
-- Icons provide visual identification
-- Mock data until backend Phase 8
-- UI ready for backend integration
+### Planned Features
+- Achievement display by category (Care, Progression, Equipment, Mastery)
+- Achievement progress tracking
+- Mini-game cards (Guess Game, Reflex Game, Emotional Intelligence)
+- XP rewards and cooldown timers
+- Integration with navigation
 
 ---
 
-## Phase 7: Chat Interface (LLM-Ready)
+## Phase 10: Chat Interface (LLM-Ready)
 
 **Goal:** Create chat interface for LLM integration, preparing for Phases 10-14 backend (Pet Personality & Chat).
 
+**Backend Status:** ⏳ Pending (Backend Phases 10-14)
 **Duration Estimate:** Single Claude Code session
 
-### Deliverables
-
-1. **Chat Types**
-   ```typescript
-   // src/lib/types/chat.ts
-   export interface ChatMessage {
-     id: string;
-     sender: 'USER' | 'PET';
-     message: string;
-     timestamp: string;
-   }
-
-   export interface PetPersonality {
-     petId: string;
-     traits: string[];
-     mood: string;
-     moodStability: number;
-   }
-   ```
-
-2. **Chat Component**
-   ```typescript
-   // src/components/chat/chat-interface.tsx
-   'use client';
-
-   import { useState, useRef, useEffect } from 'react';
-   import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-   import { Button } from '@/components/ui/button';
-   import { Input } from '@/components/ui/input';
-   import { Badge } from '@/components/ui/badge';
-   import { Send } from 'lucide-react';
-   import { ChatMessage } from '@/lib/types/chat';
-
-   interface ChatInterfaceProps {
-     petName: string;
-     petId: string;
-     personality?: string[];
-     mood?: string;
-   }
-
-   export function ChatInterface({
-     petName,
-     petId,
-     personality = ['Friendly', 'Playful'],
-     mood = 'Happy',
-   }: ChatInterfaceProps) {
-     const [messages, setMessages] = useState<ChatMessage[]>([
-       {
-         id: '1',
-         sender: 'PET',
-         message: `Hi! I'm ${petName}. How are you today?`,
-         timestamp: new Date().toISOString(),
-       },
-     ]);
-     const [input, setInput] = useState('');
-     const messagesEndRef = useRef<HTMLDivElement>(null);
-
-     const scrollToBottom = () => {
-       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-     };
-
-     useEffect(() => {
-       scrollToBottom();
-     }, [messages]);
-
-     const handleSend = () => {
-       if (!input.trim()) return;
-
-       // Add user message
-       const userMessage: ChatMessage = {
-         id: Date.now().toString(),
-         sender: 'USER',
-         message: input,
-         timestamp: new Date().toISOString(),
-       };
-       setMessages((prev) => [...prev, userMessage]);
-
-       // Mock pet response (replace with API call in Phase 11)
-       setTimeout(() => {
-         const petMessage: ChatMessage = {
-           id: (Date.now() + 1).toString(),
-           sender: 'PET',
-           message:
-             'LLM chat will be available after backend Phase 11. For now, this is just a UI preview!',
-           timestamp: new Date().toISOString(),
-         };
-         setMessages((prev) => [...prev, petMessage]);
-       }, 500);
-
-       setInput('');
-     };
-
-     return (
-       <Card className="h-[600px] flex flex-col">
-         <CardHeader>
-           <div className="flex items-center justify-between">
-             <CardTitle>Chat with {petName}</CardTitle>
-             <div className="flex gap-2">
-               {personality.map((trait) => (
-                 <Badge key={trait} variant="secondary">
-                   {trait}
-                 </Badge>
-               ))}
-               <Badge variant="outline">{mood}</Badge>
-             </div>
-           </div>
-         </CardHeader>
-
-         <CardContent className="flex-1 flex flex-col">
-           <div className="flex-1 overflow-y-auto space-y-4 mb-4">
-             {messages.map((msg) => (
-               <div
-                 key={msg.id}
-                 className={`flex ${msg.sender === 'USER' ? 'justify-end' : 'justify-start'}`}
-               >
-                 <div
-                   className={`max-w-[70%] rounded-lg p-3 ${
-                     msg.sender === 'USER'
-                       ? 'bg-primary text-primary-foreground'
-                       : 'bg-muted'
-                   }`}
-                 >
-                   <p className="text-sm">{msg.message}</p>
-                   <p className="text-xs opacity-70 mt-1">
-                     {new Date(msg.timestamp).toLocaleTimeString()}
-                   </p>
-                 </div>
-               </div>
-             ))}
-             <div ref={messagesEndRef} />
-           </div>
-
-           <div className="flex gap-2">
-             <Input
-               value={input}
-               onChange={(e) => setInput(e.target.value)}
-               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-               placeholder="Type a message..."
-             />
-             <Button onClick={handleSend} size="icon">
-               <Send className="h-4 w-4" />
-             </Button>
-           </div>
-         </CardContent>
-       </Card>
-     );
-   }
-   ```
-
-3. **Add Chat to Pet Detail**
-   ```typescript
-   // src/app/pets/[id]/page.tsx (updated)
-   import { ChatInterface } from '@/components/chat/chat-interface';
-
-   export default function PetDetailPage({ params }: { params: { id: string } }) {
-     const { data: pet } = usePet(params.id);
-
-     if (!pet) return <div>Loading...</div>;
-
-     return (
-       <div className="container mx-auto py-8">
-         <Tabs defaultValue="overview">
-           <TabsList>
-             <TabsTrigger value="overview">Overview</TabsTrigger>
-             <TabsTrigger value="chat">Chat</TabsTrigger>
-             <TabsTrigger value="history">History</TabsTrigger>
-           </TabsList>
-
-           <TabsContent value="overview">
-             <PetDetailView pet={pet} />
-           </TabsContent>
-
-           <TabsContent value="chat">
-             <ChatInterface petName={pet.name} petId={pet.petId} />
-           </TabsContent>
-
-           <TabsContent value="history">
-             <PetHistory petId={pet.petId} />
-           </TabsContent>
-         </Tabs>
-       </div>
-     );
-   }
-   ```
-
-4. **Personality Display**
-   ```typescript
-   // src/components/pets/personality-card.tsx
-   'use client';
-
-   import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-   import { Badge } from '@/components/ui/badge';
-   import { Progress } from '@/components/ui/progress';
-
-   interface PersonalityCardProps {
-     traits: string[];
-     mood: string;
-     moodStability: number;
-   }
-
-   export function PersonalityCard({
-     traits,
-     mood,
-     moodStability,
-   }: PersonalityCardProps) {
-     return (
-       <Card>
-         <CardHeader>
-           <CardTitle>Personality</CardTitle>
-         </CardHeader>
-         <CardContent className="space-y-4">
-           <div>
-             <p className="text-sm font-medium mb-2">Traits</p>
-             <div className="flex flex-wrap gap-2">
-               {traits.map((trait) => (
-                 <Badge key={trait} variant="secondary">
-                   {trait}
-                 </Badge>
-               ))}
-             </div>
-           </div>
-
-           <div>
-             <p className="text-sm font-medium mb-2">Current Mood: {mood}</p>
-             <div className="space-y-1">
-               <div className="flex justify-between text-xs">
-                 <span>Mood Stability</span>
-                 <span>{moodStability}/100</span>
-               </div>
-               <Progress value={moodStability} />
-             </div>
-           </div>
-         </CardContent>
-       </Card>
-     );
-   }
-   ```
-
-### Testing Checklist
-
-- [ ] Chat interface displays messages correctly
-- [ ] Can send messages via input
-- [ ] Messages scroll automatically
-- [ ] User/pet messages styled differently
-- [ ] Personality traits display
-- [ ] Mood indicator shows
-- [ ] Enter key sends message
-- [ ] Chat tab appears in pet detail
-
-### Technical Notes
-
-- Chat UI ready for LLM integration
-- Mock responses until backend Phase 11
-- Auto-scrolling for new messages
-- Personality traits displayed as badges
-- Mood stability shown with progress bar
+### Planned Features
+- Chat interface component
+- Pet personality display (traits, mood, stability)
+- Message history with auto-scrolling
+- Personality badges
+- Chat tab on pet detail page
 
 ---
 
-## Phase 8: RPG & Combat UI (Future-Ready)
+## Phase 11: RPG & Combat UI (Future-Ready)
 
 **Goal:** Create UI for XP, levels, skill trees, and dungeon combat, preparing for Phases 15-19 backend (RPG Progression).
 
+**Backend Status:** ⏳ Pending (Backend Phases 15-19)
 **Duration Estimate:** Single Claude Code session
 
-### Deliverables
-
-1. **RPG Types**
-   ```typescript
-   // src/lib/types/rpg.ts
-   export interface Progression {
-     petId: string;
-     level: number;
-     currentXP: number;
-     totalXP: number;
-     xpForNextLevel: number;
-     unspentSkillPoints: number;
-     allocatedSkills: Record<string, number>;
-     primaryTree: 'FIRE' | 'SCALES' | 'AGILITY' | null;
-   }
-
-   export interface Skill {
-     id: string;
-     name: string;
-     description: string;
-     tree: 'FIRE' | 'SCALES' | 'AGILITY';
-     currentRank: number;
-     maxRank: number;
-     levelRequired: number;
-     prerequisite: string | null;
-     icon: string;
-   }
-
-   export interface DungeonRun {
-     runId: string;
-     petId: string;
-     currentFloor: number;
-     petCurrentHP: number;
-     petMaxHP: number;
-     enemies: Enemy[];
-     state: 'IN_PROGRESS' | 'VICTORY' | 'RETREATED' | 'DEFEATED';
-   }
-
-   export interface Enemy {
-     id: string;
-     type: string;
-     currentHP: number;
-     maxHP: number;
-     attack: number;
-     defense: number;
-   }
-   ```
-
-2. **XP & Level Display**
-   ```typescript
-   // src/components/rpg/level-card.tsx
-   'use client';
-
-   import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-   import { Badge } from '@/components/ui/badge';
-   import { Progress } from '@/components/ui/progress';
-   import { Zap } from 'lucide-react';
-
-   interface LevelCardProps {
-     level: number;
-     currentXP: number;
-     xpForNextLevel: number;
-     totalXP: number;
-     unspentSkillPoints: number;
-   }
-
-   export function LevelCard({
-     level,
-     currentXP,
-     xpForNextLevel,
-     totalXP,
-     unspentSkillPoints,
-   }: LevelCardProps) {
-     const progress = (currentXP / xpForNextLevel) * 100;
-
-     return (
-       <Card>
-         <CardHeader>
-           <div className="flex items-center justify-between">
-             <CardTitle className="flex items-center gap-2">
-               <Zap className="h-5 w-5 text-yellow-500" />
-               Level {level}
-             </CardTitle>
-             {unspentSkillPoints > 0 && (
-               <Badge variant="destructive">
-                 {unspentSkillPoints} Skill Point{unspentSkillPoints > 1 ? 's' : ''}
-               </Badge>
-             )}
-           </div>
-         </CardHeader>
-         <CardContent className="space-y-4">
-           <div>
-             <div className="flex justify-between text-sm mb-2">
-               <span>XP Progress</span>
-               <span className="font-medium">
-                 {currentXP} / {xpForNextLevel}
-               </span>
-             </div>
-             <Progress value={progress} className="h-3" />
-             <p className="text-xs text-muted-foreground mt-1">
-               {xpForNextLevel - currentXP} XP to next level
-             </p>
-           </div>
-
-           <div className="text-sm text-muted-foreground">
-             Total XP Earned: {totalXP.toLocaleString()}
-           </div>
-         </CardContent>
-       </Card>
-     );
-   }
-   ```
-
-3. **Skill Tree Visualization**
-   ```typescript
-   // src/components/rpg/skill-tree.tsx
-   'use client';
-
-   import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-   import { Button } from '@/components/ui/button';
-   import { Badge } from '@/components/ui/badge';
-   import { Lock, Check } from 'lucide-react';
-   import { Skill } from '@/lib/types/rpg';
-
-   interface SkillTreeProps {
-     tree: 'FIRE' | 'SCALES' | 'AGILITY';
-     skills: Skill[];
-     unspentPoints: number;
-     onAllocate: (skillId: string) => void;
-   }
-
-   const treeInfo = {
-     FIRE: { name: 'Fire Tree', icon: '🔥', description: 'Offensive power' },
-     SCALES: { name: 'Scales Tree', icon: '🛡️', description: 'Defensive tank' },
-     AGILITY: { name: 'Agility Tree', icon: '⚡', description: 'Speed & utility' },
-   };
-
-   export function SkillTree({ tree, skills, unspentPoints, onAllocate }: SkillTreeProps) {
-     const info = treeInfo[tree];
-
-     return (
-       <Card>
-         <CardHeader>
-           <div className="flex items-center gap-2">
-             <span className="text-2xl">{info.icon}</span>
-             <div>
-               <CardTitle>{info.name}</CardTitle>
-               <p className="text-sm text-muted-foreground">{info.description}</p>
-             </div>
-           </div>
-         </CardHeader>
-         <CardContent className="space-y-3">
-           {skills.map((skill) => {
-             const isMaxed = skill.currentRank >= skill.maxRank;
-             const isLocked = skill.prerequisite && !skill.currentRank;
-             const canAllocate = !isMaxed && !isLocked && unspentPoints > 0;
-
-             return (
-               <div
-                 key={skill.id}
-                 className="flex items-center justify-between p-3 border rounded-lg"
-               >
-                 <div className="flex-1">
-                   <div className="flex items-center gap-2 mb-1">
-                     <span className="font-medium">{skill.name}</span>
-                     {isMaxed && <Check className="h-4 w-4 text-green-500" />}
-                     {isLocked && <Lock className="h-4 w-4 text-muted-foreground" />}
-                   </div>
-                   <p className="text-xs text-muted-foreground">
-                     {skill.description}
-                   </p>
-                   <div className="flex gap-2 mt-2">
-                     <Badge variant="outline" className="text-xs">
-                       {skill.currentRank}/{skill.maxRank}
-                     </Badge>
-                     <Badge variant="secondary" className="text-xs">
-                       Lvl {skill.levelRequired}
-                     </Badge>
-                   </div>
-                 </div>
-
-                 <Button
-                   size="sm"
-                   onClick={() => onAllocate(skill.id)}
-                   disabled={!canAllocate}
-                 >
-                   Allocate
-                 </Button>
-               </div>
-             );
-           })}
-         </CardContent>
-       </Card>
-     );
-   }
-   ```
-
-4. **Skills Page**
-   ```typescript
-   // src/app/skills/page.tsx
-   'use client';
-
-   import { useState } from 'react';
-   import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-   import { Alert, AlertDescription } from '@/components/ui/alert';
-   import { LevelCard } from '@/components/rpg/level-card';
-   import { SkillTree } from '@/components/rpg/skill-tree';
-
-   export default function SkillsPage() {
-     // Mock data until backend Phase 16
-     const mockProgression = {
-       level: 5,
-       currentXP: 347,
-       xpForNextLevel: 500,
-       totalXP: 1847,
-       unspentSkillPoints: 3,
-     };
-
-     const mockSkills = {
-       FIRE: [
-         {
-           id: 'flame-breath-1',
-           name: 'Flame Breath I',
-           description: 'Basic fire attack, +10 damage',
-           tree: 'FIRE' as const,
-           currentRank: 2,
-           maxRank: 2,
-           levelRequired: 1,
-           prerequisite: null,
-           icon: '🔥',
-         },
-         {
-           id: 'flame-breath-2',
-           name: 'Flame Breath II',
-           description: 'Improved fire attack, +25 damage',
-           tree: 'FIRE' as const,
-           currentRank: 1,
-           maxRank: 3,
-           levelRequired: 3,
-           prerequisite: 'flame-breath-1',
-           icon: '🔥',
-         },
-       ],
-       SCALES: [
-         {
-           id: 'hardened-scales-1',
-           name: 'Hardened Scales I',
-           description: 'Increase defense by +15',
-           tree: 'SCALES' as const,
-           currentRank: 0,
-           maxRank: 2,
-           levelRequired: 1,
-           prerequisite: null,
-           icon: '🛡️',
-         },
-       ],
-       AGILITY: [
-         {
-           id: 'quick-reflexes',
-           name: 'Quick Reflexes',
-           description: '+15% dodge chance',
-           tree: 'AGILITY' as const,
-           currentRank: 0,
-           maxRank: 1,
-           levelRequired: 1,
-           prerequisite: null,
-           icon: '⚡',
-         },
-       ],
-     };
-
-     const handleAllocate = (skillId: string) => {
-       alert(`Skill allocation coming in Phase 16! Skill: ${skillId}`);
-     };
-
-     return (
-       <div className="container mx-auto py-8">
-         <h1 className="text-4xl font-bold mb-8">Skills & Progression</h1>
-
-         <Alert className="mb-6">
-           <AlertDescription>
-             Full skill system will be available after backend Phase 16. This is a
-             preview of the UI.
-           </AlertDescription>
-         </Alert>
-
-         <div className="grid gap-6">
-           <LevelCard {...mockProgression} />
-
-           <Tabs defaultValue="FIRE">
-             <TabsList className="grid w-full grid-cols-3">
-               <TabsTrigger value="FIRE">🔥 Fire</TabsTrigger>
-               <TabsTrigger value="SCALES">🛡️ Scales</TabsTrigger>
-               <TabsTrigger value="AGILITY">⚡ Agility</TabsTrigger>
-             </TabsList>
-
-             {(['FIRE', 'SCALES', 'AGILITY'] as const).map((tree) => (
-               <TabsContent key={tree} value={tree}>
-                 <SkillTree
-                   tree={tree}
-                   skills={mockSkills[tree]}
-                   unspentPoints={mockProgression.unspentSkillPoints}
-                   onAllocate={handleAllocate}
-                 />
-               </TabsContent>
-             ))}
-           </Tabs>
-         </div>
-       </div>
-     );
-   }
-   ```
-
-5. **Dungeon Combat UI**
-   ```typescript
-   // src/components/rpg/dungeon-combat.tsx
-   'use client';
-
-   import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-   import { Button } from '@/components/ui/button';
-   import { Progress } from '@/components/ui/progress';
-   import { Badge } from '@/components/ui/badge';
-   import { Sword, Shield, Heart } from 'lucide-react';
-
-   interface DungeonCombatProps {
-     floor: number;
-     petHP: number;
-     petMaxHP: number;
-     enemies: Array<{
-       id: string;
-       type: string;
-       currentHP: number;
-       maxHP: number;
-     }>;
-     onAttack: (enemyId: string) => void;
-     onRetreat: () => void;
-   }
-
-   export function DungeonCombat({
-     floor,
-     petHP,
-     petMaxHP,
-     enemies,
-     onAttack,
-     onRetreat,
-   }: DungeonCombatProps) {
-     return (
-       <div className="space-y-6">
-         <Card>
-           <CardHeader>
-             <div className="flex items-center justify-between">
-               <CardTitle>Floor {floor}</CardTitle>
-               <Badge variant="outline">Combat</Badge>
-             </div>
-           </CardHeader>
-           <CardContent>
-             <div className="space-y-2">
-               <div className="flex items-center justify-between text-sm">
-                 <span className="flex items-center gap-2">
-                   <Heart className="h-4 w-4 text-red-500" />
-                   Your HP
-                 </span>
-                 <span className="font-medium">
-                   {petHP}/{petMaxHP}
-                 </span>
-               </div>
-               <Progress value={(petHP / petMaxHP) * 100} />
-             </div>
-           </CardContent>
-         </Card>
-
-         <div className="space-y-4">
-           <h3 className="text-lg font-semibold">Enemies</h3>
-           {enemies.map((enemy) => (
-             <Card key={enemy.id}>
-               <CardContent className="pt-6">
-                 <div className="flex items-center justify-between mb-4">
-                   <div>
-                     <p className="font-medium">{enemy.type}</p>
-                     <p className="text-sm text-muted-foreground">
-                       {enemy.currentHP}/{enemy.maxHP} HP
-                     </p>
-                   </div>
-                   <Button onClick={() => onAttack(enemy.id)} size="sm">
-                     <Sword className="h-4 w-4 mr-2" />
-                     Attack
-                   </Button>
-                 </div>
-                 <Progress value={(enemy.currentHP / enemy.maxHP) * 100} />
-               </CardContent>
-             </Card>
-           ))}
-         </div>
-
-         <Button
-           variant="outline"
-           className="w-full"
-           onClick={onRetreat}
-         >
-           <Shield className="h-4 w-4 mr-2" />
-           Retreat
-         </Button>
-       </div>
-     );
-   }
-   ```
-
-6. **Dungeon Page**
-   ```typescript
-   // src/app/dungeon/page.tsx
-   'use client';
-
-   import { useState } from 'react';
-   import { Button } from '@/components/ui/button';
-   import { Alert, AlertDescription } from '@/components/ui/alert';
-   import { DungeonCombat } from '@/components/rpg/dungeon-combat';
-
-   export default function DungeonPage() {
-     const [inCombat, setInCombat] = useState(false);
-
-     // Mock combat data
-     const mockCombat = {
-       floor: 1,
-       petHP: 180,
-       petMaxHP: 200,
-       enemies: [
-         {
-           id: 'goblin-1',
-           type: 'Goblin',
-           currentHP: 25,
-           maxHP: 30,
-         },
-       ],
-     };
-
-     const handleStartDungeon = () => {
-       alert('Dungeon system coming in Phase 17!');
-       setInCombat(true);
-     };
-
-     const handleAttack = (enemyId: string) => {
-       alert(`Attacking ${enemyId}`);
-     };
-
-     const handleRetreat = () => {
-       setInCombat(false);
-     };
-
-     return (
-       <div className="container mx-auto py-8 max-w-2xl">
-         <h1 className="text-4xl font-bold mb-8">Dungeon</h1>
-
-         <Alert className="mb-6">
-           <AlertDescription>
-             Full dungeon combat system will be available after backend Phase 17.
-             This is a preview of the UI.
-           </AlertDescription>
-         </Alert>
-
-         {!inCombat ? (
-           <div className="text-center space-y-4">
-             <p className="text-muted-foreground">
-               Enter the dungeon to battle enemies and earn rewards!
-             </p>
-             <Button size="lg" onClick={handleStartDungeon}>
-               Start Dungeon Run
-             </Button>
-           </div>
-         ) : (
-           <DungeonCombat
-             {...mockCombat}
-             onAttack={handleAttack}
-             onRetreat={handleRetreat}
-           />
-         )}
-       </div>
-     );
-   }
-   ```
-
-7. **Update Navigation**
-   ```typescript
-   // src/components/layout/nav-bar.tsx (final update)
-   const navItems = [
-     { href: '/', label: 'Dashboard' },
-     { href: '/pets', label: 'My Pets' },
-     { href: '/skills', label: 'Skills' },
-     { href: '/dungeon', label: 'Dungeon' },
-     { href: '/inventory', label: 'Inventory' },
-     { href: '/games', label: 'Games' },
-     { href: '/achievements', label: 'Achievements' },
-     { href: '/leaderboard', label: 'Leaderboard' },
-   ];
-   ```
-
-### Testing Checklist
-
-- [ ] Level card displays XP progress
-- [ ] Skill tree shows all skills correctly
-- [ ] Can view different skill trees via tabs
-- [ ] Skill allocation button appears
-- [ ] Locked skills display correctly
-- [ ] Dungeon combat UI displays HP bars
-- [ ] Enemy cards show correctly
-- [ ] Attack and retreat buttons work
-- [ ] All navigation items present
-
-### Technical Notes
-
-- XP progress bar shows percentage to next level
-- Skill trees organized by tabs
-- Prerequisites lock skills visually
-- Combat UI shows HP for pet and enemies
-- Progress bars for all HP displays
-- Mock data until backend Phases 15-19
+### Planned Features
+- Level and XP progress display
+- Skill tree visualization (Fire, Scales, Agility)
+- Skill allocation interface
+- Dungeon combat UI
+- Enemy cards with HP tracking
+- Attack and retreat actions
 
 ---
 
@@ -1456,6 +319,10 @@ Real-time update indicators, smooth animations with Framer Motion, loading skele
 ### Environment Variables
 
 ```bash
+# .env.local
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api
+NEXT_PUBLIC_POLLING_INTERVAL=5000
+
 # .env.production
 NEXT_PUBLIC_API_BASE_URL=https://api.reactor-pets.com/api
 NEXT_PUBLIC_POLLING_INTERVAL=10000
@@ -1572,38 +439,58 @@ test('create new pet', async ({ page }) => {
 - [x] Enhance pet detail view
 - [x] Test real-time updates
 
-### Phase 5: Inventory UI
-- [ ] Define inventory types
-- [ ] Create inventory grid
+### Phase 5: XP & Progression UI ✅
+- [x] Define progression types
+- [x] Create XP card component
+- [x] Create custom hook for progression
+- [x] Add XP card to dashboard
+- [x] Test XP updates on pet interactions
+- [x] Verify multiplier calculations
+
+### Phase 6: Equipment System UI ✅
+- [x] Define equipment types
+- [x] Create equipment slots component
+- [x] Build equipment inventory dialog
+- [x] Add equipment tab to pet detail page
+- [x] Implement equip/unequip functionality
+- [x] Test equipment modifiers display
+
+### Phase 7: Shop System UI ✅
+- [x] Define shop types
+- [x] Create shop grid component
+- [x] Build shop page with tabs
+- [x] Integrate XP balance display
+- [x] Implement purchase flow
+- [x] Add shop to navigation
+- [x] Test purchase validation
+
+### Phase 8: Consumables & Inventory UI (Pending Backend)
+- [ ] Define consumable types
+- [ ] Create consumables grid component
 - [ ] Build inventory page
-- [ ] Implement use item dialog
-- [ ] Add to navigation
-- [ ] Test inventory display
+- [ ] Implement use consumable functionality
+- [ ] Add consumables to shop
+- [ ] Test consumable effects
+- [ ] Display sickness indicator
 
-### Phase 6: Games & Achievements
-- [ ] Define achievement types
-- [ ] Create achievements page
-- [ ] Build game card component
-- [ ] Create games page
-- [ ] Update navigation
-- [ ] Test UI components
+### Future Phases (Backend Pending)
 
-### Phase 7: Chat Interface
-- [ ] Define chat types
-- [ ] Create chat component
-- [ ] Add chat to pet detail
-- [ ] Build personality card
-- [ ] Test chat interface
+### Phase 9: Mini-Games & Achievements UI
+- [ ] Achievement types and display
+- [ ] Game card components
+- [ ] Achievements page
+- [ ] Games page
 
-### Phase 8: RPG & Combat
-- [ ] Define RPG types
-- [ ] Create level card
-- [ ] Build skill tree component
-- [ ] Create skills page
-- [ ] Implement dungeon combat UI
-- [ ] Build dungeon page
-- [ ] Update navigation
-- [ ] Test RPG UI
+### Phase 10: Chat Interface (LLM-Ready)
+- [ ] Chat types
+- [ ] Chat component
+- [ ] Personality display
+
+### Phase 11: RPG & Combat UI
+- [ ] RPG types
+- [ ] Level card
+- [ ] Skill tree component
+- [ ] Dungeon combat UI
 
 ---
 
@@ -1631,3 +518,53 @@ test('create new pet', async ({ page }) => {
 
 ---
 
+## Development Workflow
+
+### Running the Application
+
+```bash
+# Development
+npm run dev
+
+# Type checking
+npm run type-check
+
+# Production build
+npm run build
+npm start
+```
+
+### API Configuration
+
+The frontend connects to the backend API via environment variables. Ensure the backend is running before starting the frontend.
+
+**Default Development Settings:**
+- Backend API: `http://localhost:8080/api`
+- Polling Interval: 5000ms (5 seconds)
+
+---
+
+## Success Metrics
+
+### Phases 1-7 Success ✅
+- [x] Player can earn XP from interactions
+- [x] Equipment modifies pet stats with trade-offs
+- [x] Can purchase equipment and upgrades with XP
+- [x] Player progression tracked and persisted
+- [x] Shop interface functional with purchase validation
+- [x] Equipment can be equipped/unequipped per pet
+- [x] Real-time updates for stats, XP, and equipment
+
+### Phase 8 Success (Pending)
+- [ ] Consumables provide immediate benefits
+- [ ] Inventory displays quantities correctly
+- [ ] Consumables can be used on pets
+- [ ] Sickness indicator displays
+- [ ] Advanced Medicine cures sickness
+
+### Future Success Metrics
+- [ ] Achievements unlock with XP bonuses
+- [ ] Mini-games provide alternative XP source
+- [ ] Chat interface functional with pet personality
+- [ ] Skill trees allow character progression
+- [ ] Dungeon combat system operational
