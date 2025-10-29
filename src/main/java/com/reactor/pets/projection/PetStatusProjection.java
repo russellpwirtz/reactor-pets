@@ -124,23 +124,23 @@ public class PetStatusProjection {
   @EventHandler
   @Transactional
   public void on(PetEvolvedEvent event) {
-    log.debug("Processing PetEvolvedEvent for petId: {}", event.petId());
+    log.debug("Processing PetEvolvedEvent for petId: {}", event.getPetId());
 
     petStatusRepository
-        .findById(event.petId())
+        .findById(event.getPetId())
         .ifPresent(
             view -> {
-              view.setStage(event.newStage());
-              view.setEvolutionPath(event.evolutionPath());
-              view.setLastUpdated(event.timestamp());
+              view.setStage(event.getNewStage());
+              view.setEvolutionPath(event.getEvolutionPath());
+              view.setLastUpdated(event.getTimestamp());
               petStatusRepository.save(view);
               log.info(
                   "Pet {} evolved from {} to {} with {} path. Reason: {}",
                   view.getName(),
-                  event.oldStage(),
-                  event.newStage(),
-                  event.evolutionPath(),
-                  event.evolutionReason());
+                  event.getOldStage(),
+                  event.getNewStage(),
+                  event.getEvolutionPath(),
+                  event.getEvolutionReason());
             });
   }
 

@@ -104,7 +104,7 @@ public class PetEvolutionSaga {
 
   @SagaEventHandler(associationProperty = "petId")
   public void on(PetEvolvedEvent event) {
-    this.currentStage = event.newStage();
+    this.currentStage = event.getNewStage();
     LOG.info("Pet {} evolved to stage: {}", petId, currentStage);
 
     // Continue tracking for next evolution

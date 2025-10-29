@@ -88,15 +88,15 @@ public class PetStatisticsProjection {
   @EventHandler
   @Transactional
   public void on(PetEvolvedEvent event) {
-    log.debug("Updating stage distribution for PetEvolvedEvent: {}", event.petId());
+    log.debug("Updating stage distribution for PetEvolvedEvent: {}", event.getPetId());
 
     PetStatistics stats = getOrCreateStatistics();
 
     // Decrement old stage count
-    stats.getStageDistribution().computeIfPresent(event.oldStage(), (stage, count) -> count - 1);
+    stats.getStageDistribution().computeIfPresent(event.getOldStage(), (stage, count) -> count - 1);
 
     // Increment new stage count
-    stats.getStageDistribution().merge(event.newStage(), 1, Integer::sum);
+    stats.getStageDistribution().merge(event.getNewStage(), 1, Integer::sum);
 
     // Clean up zero counts
     stats
@@ -104,13 +104,13 @@ public class PetStatisticsProjection {
         .entrySet()
         .removeIf(entry -> entry.getValue() != null && entry.getValue() <= 0);
 
-    stats.setLastUpdated(event.timestamp());
+    stats.setLastUpdated(event.getTimestamp());
     statisticsRepository.save(stats);
 
     log.debug(
         "Stage distribution updated: {} -> {}",
-        event.oldStage(),
-        event.newStage());
+        event.getOldStage(),
+        event.getNewStage());
   }
 
   @QueryHandler
@@ -121,11 +121,11 @@ public class PetStatisticsProjection {
 
   @QueryHandler
   public List<PetStatusView> handle(GetLeaderboardQuery query) {
-    log.debug("Handling GetLeaderboardQuery for type: {}", query.type());
+    log.debug("Handling GetLeaderboardQuery for type: {}", query.getType());
 
     List<PetStatusView> allPets = petStatusRepository.findByIsAlive(true);
 
-    return switch (query.type()) {
+    return switch (query.getType()) {
       case AGE -> allPets.stream()
           .sorted(Comparator.comparingInt(PetStatusView::getAge).reversed())
           .limit(10)

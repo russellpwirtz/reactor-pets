@@ -115,10 +115,10 @@ public class Pet {
     if (!isAlive) {
       throw new IllegalStateException("Cannot evolve a dead pet");
     }
-    if (command.newStage() == null) {
+    if (command.getNewStage() == null) {
       throw new IllegalArgumentException("New stage cannot be null");
     }
-    if (command.newStage().ordinal() <= this.stage.ordinal()) {
+    if (command.getNewStage().ordinal() <= this.stage.ordinal()) {
       throw new IllegalStateException(
           "Cannot evolve to a stage lower than or equal to current stage");
     }
@@ -126,11 +126,11 @@ public class Pet {
     // Apply event
     AggregateLifecycle.apply(
         new PetEvolvedEvent(
-            command.petId(),
+            command.getPetId(),
             this.stage,
-            command.newStage(),
-            command.evolutionPath(),
-            command.evolutionReason(),
+            command.getNewStage(),
+            command.getEvolutionPath(),
+            command.getEvolutionReason(),
             Instant.now()));
   }
 
@@ -168,8 +168,8 @@ public class Pet {
 
   @EventSourcingHandler
   public void on(PetEvolvedEvent event) {
-    this.stage = event.newStage();
-    this.evolutionPath = event.evolutionPath();
+    this.stage = event.getNewStage();
+    this.evolutionPath = event.getEvolutionPath();
   }
 
   @CommandHandler

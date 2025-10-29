@@ -12,7 +12,7 @@ A virtual pet application built with Axon Framework 4.x and Project Reactor, dem
 - **Build**: Maven
 - **Code Quality**: Spotless, Checkstyle, SpotBugs, JaCoCo
 
-## Phase 5 Complete ✅
+## Phase 6 Complete ✅ - REST API
 
 **Current features:**
 - Pet lifecycle with event sourcing (create, feed, play, clean)
@@ -22,13 +22,17 @@ A virtual pet application built with Axon Framework 4.x and Project Reactor, dem
 - Evolution stages: EGG → BABY → TEEN → ADULT
 - Evolution paths: HEALTHY vs NEGLECTED based on care
 - ASCII art for different pet types and stages
-- **Global statistics dashboard tracking all pets** (NEW)
-- **Leaderboards by age, happiness, and health** (NEW)
-- **PetManagerService for multi-pet management** (NEW)
-- **Enhanced time tick with concurrency control** (NEW)
+- Global statistics dashboard tracking all pets
+- Leaderboards by age, happiness, and health
+- PetManagerService for multi-pet management
+- Enhanced time tick with concurrency control
+- **REST API with full CRUD operations** (NEW - Phase 6)
+- **Swagger/OpenAPI documentation** (NEW - Phase 6)
+- **Global exception handling with standardized errors** (NEW - Phase 6)
+- **CORS configuration for frontend development** (NEW - Phase 6)
 - JPA persistence with H2 database for projections
 - Event history queries via EventStore
-- Interactive CLI with dashboard and leaderboard commands
+- Interactive CLI and REST API (dual interface)
 - **117 passing tests** with comprehensive coverage
 
 ## Prerequisites
@@ -79,7 +83,9 @@ mvn spotless:apply
 mvn clean verify
 ```
 
-## CLI Commands
+## Interfaces
+
+### CLI Commands
 
 ```
 create <name> <type>      - Create a new pet (DOG, CAT, DRAGON)
@@ -95,6 +101,29 @@ help                      - Show help
 exit                      - Exit
 ```
 
+### REST API Endpoints
+
+Base URL: `http://localhost:8080/api`
+
+**Pet Operations:**
+- `POST /api/pets` - Create a new pet
+- `GET /api/pets` - List all pets
+- `GET /api/pets/{id}` - Get pet status
+- `POST /api/pets/{id}/feed` - Feed pet
+- `POST /api/pets/{id}/play` - Play with pet
+- `POST /api/pets/{id}/clean` - Clean pet
+- `GET /api/pets/{id}/history?limit=10` - Get event history
+
+**Statistics:**
+- `GET /api/statistics` - Get global statistics
+- `GET /api/leaderboard?type=AGE` - Get leaderboard (AGE, HAPPINESS, HEALTH)
+
+**API Documentation:**
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI Spec: `http://localhost:8080/v3/api-docs`
+
+See `docs/06_REST_API.md` for detailed API documentation and examples.
+
 ## Architecture
 
 Built with **Event Sourcing**, **CQRS**, and **Saga** patterns:
@@ -109,6 +138,8 @@ Built with **Event Sourcing**, **CQRS**, and **Saga** patterns:
 - **Saga:** PetEvolutionSaga (coordinates evolution based on age and care)
 - **Reactive:** TimeTickScheduler (Flux.interval with concurrency control for batch processing)
 - **Services:** PetManagerService (multi-pet management and statistics)
+- **REST API:** PetController, StatisticsController with async operations
+- **DTOs:** Request/Response objects with validation and error handling
 
 **Core Features:**
 - Event sourcing for complete pet history
@@ -137,8 +168,8 @@ See `docs/01_DESIGN.md` for phase roadmap and future features.
 ## Next Steps
 
 See `docs/01_DESIGN.md` for planned phases:
-- **Phase 6 (Next): REST API** - Expose endpoints for web/mobile frontends
-- Phase 7: Items & Inventory System
+- **Phase 6: REST API** ✅ COMPLETE - Expose endpoints for web/mobile frontends
+- **Phase 7 (Next): Items & Inventory System** - Food types, toys, medicine
 - Phase 8: Mini-Games & Achievements
 - Phase 9: Advanced Features (snapshots, upcasting, deadlines)
 

@@ -1,6 +1,11 @@
 package com.reactor.pets.query;
 
-public record GetLeaderboardQuery(LeaderboardType type) {
+import lombok.Value;
+
+@Value
+public class GetLeaderboardQuery {
+  LeaderboardType type;
+
   public enum LeaderboardType {
     AGE,
     HAPPINESS,

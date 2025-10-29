@@ -42,6 +42,10 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
 
     <!-- H2 Database -->
     <dependency>
@@ -68,6 +72,13 @@
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <optional>true</optional>
+    </dependency>
+
+    <!-- Springdoc OpenAPI (Swagger) -->
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>2.3.0</version>
     </dependency>
 
     <!-- SLF4J and Logback -->
@@ -241,6 +252,10 @@
             <exclude>**/ReactorPetsApplication.class</exclude>
             <exclude>**/query/*.class</exclude>
             <exclude>**/scheduler/*.class</exclude>
+            <exclude>**/api/dto/*.class</exclude>
+            <exclude>**/api/config/*.class</exclude>
+            <exclude>**/api/exception/*.class</exclude>
+            <exclude>**/api/controller/*.class</exclude>
           </excludes>
         </configuration>
         <executions>

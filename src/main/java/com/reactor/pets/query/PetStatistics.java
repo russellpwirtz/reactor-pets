@@ -33,7 +33,7 @@ public class PetStatistics {
   private String longestLivedPetName;
   private int longestLivedPetAge;
 
-  @ElementCollection
+  @ElementCollection(fetch = jakarta.persistence.FetchType.EAGER)
   @CollectionTable(name = "stage_distribution", joinColumns = @JoinColumn(name = "statistics_id"))
   @MapKeyColumn(name = "stage")
   @MapKeyEnumerated(EnumType.STRING)
