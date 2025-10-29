@@ -1,161 +1,125 @@
 # Reactor Pets - Implementation Roadmap
 
-**Last Updated:** 2025-10-28
-**Current Phase:** Phase 7B Complete → Phase 7C Next
+**Last Updated:** 2025-10-29
+**Current Phase:** Phase 7C Complete (Shop System) → Phase 7D In Progress (Consumables)
 
 ---
 
 ## Quick Reference
 
 ### Completed Phases ✅
-- ✅ **Phase 1:** Foundation & Basic Pet Lifecycle
-- ✅ **Phase 2:** Multiple Interactions & State Projections
-- ✅ **Phase 3:** Reactive Time System & Degradation
-- ✅ **Phase 4:** Evolution System & Pet Stages
-- ✅ **Phase 5:** Multiple Pets & Statistics Dashboard
-- ✅ **Phase 6:** REST API & JSON Interface
-- ✅ **Phase 7A:** XP System Foundation (Player progression, XP earning, multipliers)
-- ✅ **Phase 7B:** Equipment System (Equippable items, stat modifiers, mourning mechanics)
+- ✅ **Phase 1-6:** Foundation, lifecycle, time system, evolution, multiple pets, REST API
+- ✅ **Phase 7A:** XP System Foundation
+- ✅ **Phase 7B:** Equipment System
+- ✅ **Phase 7C:** XP Shop (Domain models, saga, REST endpoints - CLI pending)
 
-### Upcoming Phases 🚧
+### Current Phase 🚧
+**Phase 7D: Consumables & Auto-Actions** (Session 1 of 2-3)
+- ✅ Consumable domain model (7 types: Apple, Pizza, Gourmet Meal, Basic Medicine, Advanced Medicine, Cookie, Premium Toy)
+- ✅ PlayerInventory extended for consumables (quantity tracking)
+- ✅ Pet sickness state (isSick, lowHealthTicks)
+- ✅ UseConsumableCommand with effects (hunger/happiness/health restore)
+- ✅ ConsumableUsageSaga (inventory coordination)
+- ✅ Equipment modifiers apply to consumables
+- 🚧 Sickness mechanic in TimeTickCommand (health <30 for 3+ ticks → 20% sick chance)
+- 🚧 Auto-actions (Auto-Feeder at hunger >70, Entertainment System at happiness <50)
+- ⏳ Add consumables to shop
+- ⏳ CLI/REST endpoints for consumables
+- ⏳ Unit and integration tests
 
-**Phase 7: Progression & Equipment System** (Idle/Incremental Mechanics)
-- 7A: XP System Foundation ✅ COMPLETED
-- 7B: Equipment System ✅ COMPLETED
-- 7C: XP Shop (1-2 sessions)
-- 7D: Consumables & Auto-Actions (2-3 sessions)
-- 7E: Power-Leveling & Balance Tuning (1 session)
-
-**Phase 8: Achievements & Mini-Games** (2-3 sessions)
-
-**Phase 9: Prestige System & Advanced Polish** (2-3 sessions)
-
----
-
-## Phase 7: Progression & Equipment System
-
-### Phase 7A: XP System Foundation ✅ COMPLETED
-**Duration:** 1 Claude Code session
-**Goal:** Implement XP earning and tracking without spending mechanics
-
-**Completed Deliverables:**
-- ✅ PlayerProgression aggregate (playerId, totalXP, lifetimeXP, totalPetsCreated)
-- ✅ XP earning from interactions (feed +10, play +15, clean +10) via XPEarningSaga
-- ✅ Pet XP multiplier field in Pet aggregate and PetStatusView (starts 1.0x)
-- ✅ TimePassedEvent extended with xpMultiplierChange and newXpMultiplier
-- ✅ XPEarningSaga coordinates XP earning across aggregates
-- ✅ PlayerProgressionProjection and PlayerProgressionView for queries
-- ✅ PlayerInitializationService grants 100 starting XP
-- ✅ Dashboard integration shows player progression
-- ✅ REST endpoint: `GET /api/player/progression`
-- ✅ All tests passing (120 tests, 0 failures)
-
-**Implementation Notes:**
-- XP multiplier mechanics ready for future milestone-based increases
-- Survival and evolution XP bonuses deferred to Phase 7B for equipment balance
-- PetCreatedForPlayerEvent added but handler deferred (saga warns, no errors)
-- Clean separation: XPEarningSaga handles earning, PlayerProgression handles state
+### Upcoming Phases 📋
+- **Phase 7E:** Power-Leveling & Balance Tuning (1 session)
+- **Phase 8:** Achievements & Mini-Games (2-3 sessions)
+- **Phase 9:** Prestige System & Advanced Polish (2-3 sessions)
 
 ---
 
-### Phase 7B: Equipment System ✅ COMPLETED
-**Duration:** 1 Claude Code session
-**Goal:** Introduce equippable items that modify pet stats
+## Phase 7C: XP Shop ✅ COMPLETED
 
-**Completed Deliverables:**
-- ✅ PlayerInventory aggregate (aggregate ID: "PLAYER_INVENTORY")
-- ✅ Pet aggregate updates: equippedItems Map, maxEquipmentSlots field
-- ✅ Equipment domain model: EquipmentSlot, StatModifier, EquipmentItem
-- ✅ Equipment slots: FOOD_BOWL, TOY, ACCESSORY
-- ✅ Slots unlock by stage: Baby=1, Teen=2, Adult=3, Egg=0
-- ✅ Starter package: Basic Bowl (+10% food efficiency), Simple Toy (+10% play efficiency), Comfort Blanket (+1 health/tick)
-- ✅ 6 stat modifiers: HUNGER_DECAY_RATE, HAPPINESS_DECAY_RATE, HEALTH_DECAY_RATE, FOOD_EFFICIENCY, PLAY_EFFICIENCY, HEALTH_REGEN
-- ✅ EquipmentSaga: cross-aggregate coordination for equip/unequip
-- ✅ PetDeathSaga: returns equipped items to inventory on pet death
-- ✅ Pet mourning mechanics: alive pets lose 10% happiness when another pet dies
-- ✅ InventoryProjection with GetInventoryQuery and GetInventoryItemQuery
-- ✅ PetStatusView updated with equippedItems and maxEquipmentSlots
-- ✅ Equipment modifiers applied to all pet actions (feed, play, time ticks)
-- ✅ All tests passing (120 tests, 0 failures)
+**Implemented:**
+- ✅ ItemDefinition, ItemType (EQUIPMENT, PERMANENT_UPGRADE), ShopCatalog
+- ✅ 9 Equipment items across 3 slots (Food Bowl, Toy, Accessory)
+- ✅ 8 Permanent upgrades (metabolism, disposition, genetics, kitchen, hatcher, multi-pet licenses)
+- ✅ ShopPurchaseSaga with XP validation
+- ✅ PetCreationService with XP cost logic (FREE, 50, 100, 150...)
+- ✅ ShopProjection with query handlers
+- ✅ REST endpoints: GET /api/shop/items, /api/shop/upgrades, POST /api/shop/purchase/*
+- ✅ Comprehensive unit tests (ShopPurchaseSagaTest)
 
-**Implementation Notes:**
-- Used separate aggregate ID for PlayerInventory to avoid Axon ID conflicts
-- Equipment data stored as JSON in TEXT columns for H2 compatibility
-- Fixed Axon XStream serialization by using mutable collections (ArrayList, HashMap)
-- PetDiedEvent extended to include equipped items list
-- Starter equipment initialized with PlayerInitializationService
-- CLI and REST endpoints deferred to later in Phase 7B or Phase 7C
-
-**Testing Completed:**
-- ✅ Unit tests for Pet aggregate with equipment commands
-- ✅ Unit tests for PlayerInventory aggregate
-- ✅ Integration tests verify equipment initialization
-- ✅ All existing tests updated for new PetDiedEvent signature
+**Pending:**
+- CLI commands for browsing shop and purchasing
 
 ---
 
-### Phase 7C: XP Shop
-**Duration:** 1-2 Claude Code sessions
-**Goal:** Allow spending XP to purchase equipment and permanent upgrades
+## Phase 7D: Consumables & Auto-Actions 🚧 IN PROGRESS
 
-**Key Deliverables:**
-- ItemDefinition entity (catalog with XP costs)
-- Equipment items for sale (9 items):
-  - Food Bowl: Slow Feeder (200 XP), Nutrient Bowl (300 XP), Auto-Feeder (500 XP)
-  - Toy: Toy Box (200 XP), Exercise Wheel (300 XP), Entertainment System (500 XP)
-  - Accessory: Cozy Bed (200 XP), Health Monitor (400 XP), XP Charm (600 XP)
-- Permanent upgrades (8 upgrades):
-  - Efficient Metabolism (200 XP), Happy Disposition (150 XP), Sturdy Genetics (150 XP)
-  - Industrial Kitchen (500 XP), Fast Hatcher (250 XP)
-  - Multi-Pet License I/II/III (300/600/1000 XP)
-- Purchase flow saga with XP validation
-- Create pet XP cost: FREE for 1st, then 50/100/150... (increases by 50)
-- Starter package: 100 XP, 3 Apples, 1 Ball, Comfort Blanket
-- CLI: `shop`, `buy <itemType>`, `upgrades`
-- REST endpoints: `GET /api/shop/items`, `GET /api/shop/upgrades`, `POST /api/shop/purchase/{type}/{id}`
-
-**Testing:**
-- Purchase item, verify XP deducted
-- Insufficient XP, verify rejection
-- Purchase permanent upgrade, verify applies to new pets
-- Create multiple pets, verify cost increases
-- Multi-Pet License, verify can create more pets
-
----
-
-### Phase 7D: Consumables & Auto-Actions
-**Duration:** 2-3 Claude Code sessions
 **Goal:** Introduce consumable items and automation mechanics
 
-**Key Deliverables:**
-- Consumable items (7 types):
-  - Food: Apple (50 XP), Pizza (100 XP), Gourmet Meal (200 XP)
-  - Medicine: Basic (100 XP), Advanced (200 XP)
-  - Treats: Cookie (75 XP), Premium Toy (150 XP)
-- UseConsumableCommand with inventory check saga
-- Auto-action logic in TimeTickCommand:
-  - Auto-Feeder triggers at hunger >70
-  - Entertainment System triggers at happiness <50
-  - Both query inventory, consume items if available
-- Enhanced sickness mechanic:
-  - Health <30 for 3+ ticks: 20% chance/tick of PetBecameSickEvent
-  - Sickness: hunger/happiness decay +50%, cannot play
-  - Advanced Medicine cures, Basic Medicine doesn't
-- Apply equipment modifiers to consumable effectiveness (Nutrient Bowl, Industrial Kitchen)
-- CLI: `use <petId> <consumableType>`, `craft <consumableType> <qty>`
-- REST endpoint: `POST /api/pets/{id}/use`
+### Completed This Session ✅
 
-**Testing:**
-- Use consumable, verify inventory decreases
-- Auto-Feeder triggers when conditions met
-- Auto-Feeder silent when no consumables
-- Pet becomes sick at low health
-- Advanced medicine cures sickness
-- Equipment modifiers affect consumables
+**Consumable Domain Model:**
+- `ConsumableType` enum with 7 types
+- `Consumable` class with effects (hunger/happiness/health restore, cures sickness)
+- `ConsumableCatalog` with XP costs:
+  - Food: Apple (50 XP), Pizza (100 XP), Gourmet Meal (200 XP)
+  - Medicine: Basic Medicine (100 XP), Advanced Medicine (200 XP)
+  - Treats: Cookie (75 XP), Premium Toy (150 XP)
+
+**PlayerInventory Extensions:**
+- `Map<ConsumableType, Integer> consumables` for quantity tracking
+- `AddConsumableCommand`, `RemoveConsumableCommand`
+- `ConsumableAddedEvent`, `ConsumableRemovedEvent`
+- Command handlers with validation
+
+**Pet Sickness System:**
+- Added `isSick` and `lowHealthTicks` fields
+- `PetBecameSickEvent`, `PetCuredEvent`
+- Event handlers for sickness state
+
+**Consumable Usage:**
+- `UseConsumableCommand` (petId, consumableType, playerId)
+- `ConsumableUsedEvent` (tracks restoration amounts and cure)
+- Command handler applies equipment modifiers (FOOD_EFFICIENCY, PLAY_EFFICIENCY)
+- Advanced Medicine cures sickness
+- Sick pets cannot use toys
+
+**Saga Coordination:**
+- `ConsumableUsageSaga` validates inventory and removes consumable before use
+
+### Next Session TODO 📝
+
+1. **Sickness Mechanic in TimeTickCommand:**
+   - Track lowHealthTicks when health <30
+   - 20% chance per tick to emit PetBecameSickEvent after 3+ low health ticks
+   - Sick pets: hunger/happiness decay +50%, cannot play
+
+2. **Auto-Action Logic in TimeTickCommand:**
+   - Query equipped items for Auto-Feeder and Entertainment System
+   - Auto-Feeder: hunger >70 → query inventory for food consumables → use Apple/Pizza/Gourmet Meal
+   - Entertainment System: happiness <50 → query inventory for treats → use Cookie/Premium Toy
+   - Silent when no consumables available
+
+3. **Shop Integration:**
+   - Add CONSUMABLE to ItemType enum
+   - Extend ShopCatalog with consumables
+   - Update ShopPurchaseSaga to handle consumable purchases
+   - Add to starter package (3 Apples)
+
+4. **CLI/REST:**
+   - CLI: `use <petId> <consumableType>`
+   - REST: `POST /api/pets/{id}/consumable/{type}`
+   - Update shop endpoints to include consumables
+
+5. **Testing:**
+   - Unit tests: Pet aggregate with UseConsumableCommand
+   - Unit tests: Sickness mechanic
+   - Integration tests: Auto-actions trigger correctly
+   - Integration tests: Equipment modifiers affect consumables
 
 ---
 
-### Phase 7E: Power-Leveling & Balance Tuning
+## Phase 7E: Power-Leveling & Balance Tuning
+
 **Duration:** 1 Claude Code session
 **Goal:** Fine-tune progression curves and test multi-pet strategies
 
@@ -163,18 +127,10 @@
 - XP multiplier cap at 5.0x (prevent infinite scaling)
 - Multiplier decay: -0.05x per 10 ticks if stats <50
 - Dashboard enhancements: XP/min rate, highest multiplier, XP spent vs earned
-- CLI polish: color-code equipment by cost tier, show recommendations
-- REST endpoint: `GET /api/analytics/xp-rate`
 - Balance testing scenarios:
   - Early game: survive to adult with starter package
   - Mid game: afford Auto-Feeder by age 100
   - Late game: maintain 3+ pets with power-leveling
-
-**Testing:**
-- Verify multiplier caps at 5.0x
-- Test death penalty affects other pets
-- Validate early/mid/late game progression feels achievable
-- Multi-pet XP farming strategies work as intended
 
 ---
 
@@ -187,22 +143,12 @@
 - Extend PlayerProgression aggregate with achievements set
 - 12 achievement types across 4 categories (care, progression, equipment, mastery)
 - Each achievement grants one-time XP bonus (100-1000 XP)
-- Achievement tracking saga monitors all events
 - 3 mini-games:
   - Guess Game: 5 tick cooldown, success +30 XP, failure +10 XP
   - Reflex Game: 5 tick cooldown, fast +50 XP, medium +30 XP, slow +15 XP
   - Emotional Intelligence: 10 tick cooldown, correct +40 XP, wrong +10 XP
 - Pet aggregate tracks lastPlayedGames for cooldown enforcement
 - All mini-game XP affected by pet's multiplier
-- CLI: `achievements`, `game guess/reflex/emotional <petId>`
-- REST endpoints: `GET /api/achievements`, `POST /api/games/{petId}/{gameType}`
-
-**Testing:**
-- Unlock achievement, verify XP bonus
-- Play mini-game, verify XP earned with multiplier
-- Attempt during cooldown, verify rejection
-- Achievement progress tracked across pets
-- Notifications display on unlock
 
 ---
 
@@ -221,16 +167,6 @@
 - Performance optimizations: Redis caching, database indexes, batch tuning
 - Testing improvements: AggregateTestFixture, Testcontainers, load testing (100+ pets)
 - Production Docker build with health checks
-- Admin tools: reset projection, grant XP, force prestige
-- CLI: `admin reset-projection <name>`, `admin grant-xp <amount>`, `admin prestige-player`
-- REST endpoints: `POST /api/admin/reset-projection/{name}`, `POST /api/admin/grant-xp`
-
-**Testing:**
-- Prestige resets correctly, bonuses apply
-- Snapshots reduce event replay time
-- Load test with 100+ pets stable
-- Health checks report correctly
-- Admin tools work as expected
 
 ---
 
@@ -262,70 +198,55 @@
 3. **Test:** Write unit tests (AggregateTestFixture), integration tests
 4. **API:** Add REST endpoints, update Swagger docs
 5. **CLI:** Add/update CLI commands for new features
-6. **Document:** Update DESIGN.md with implementation notes
-7. **Validate:** Manual testing of full flow via CLI + API
-8. **Commit:** Git commit with descriptive message
+6. **Validate:** Manual testing of full flow via CLI + API
+7. **Commit:** Git commit with descriptive message
 
 ### Quality Standards
 - All new code passes Checkstyle + SpotBugs
 - Test coverage >80% for new code (JaCoCo)
 - All REST endpoints documented in Swagger
-- CLI help text updated for new commands
 - Event sourcing tested (command → event → projection flow)
 - Saga coordination tested for cross-aggregate operations
-
----
-
-## Estimated Timeline
-
-**Total Duration:** ~15-20 Claude Code sessions
-
-- Phase 7A: 1-2 sessions
-- Phase 7B: 2-3 sessions
-- Phase 7C: 1-2 sessions
-- Phase 7D: 2-3 sessions
-- Phase 7E: 1 session
-- Phase 8: 2-3 sessions
-- Phase 9: 2-3 sessions
-
-**Velocity Notes:**
-- Sessions with simple aggregates (PlayerProgression) faster
-- Sessions with complex sagas (equip/unequip coordination) slower
-- Balance tuning (Phase 7E) highly iterative, may extend
-- Each phase builds on previous, maintain quality to avoid rework
 
 ---
 
 ## Success Metrics
 
 ### Phase 7 Success
-- [x] Player can earn XP from interactions (Phase 7A complete)
-- [ ] XP multiplier increases with pet age/care (infrastructure ready, Phase 7B)
-- [x] Equipment modifies pet stats with trade-offs (Phase 7B complete)
-- [ ] Can purchase items with XP (Phase 7C)
-- [ ] Automation items reduce manual actions (Phase 7D)
-- [ ] Multi-pet power-leveling strategies viable (Phase 7E)
-- [x] Player progression tracked and persisted (Phase 7A complete)
+- [x] Player can earn XP from interactions (7A)
+- [x] Equipment modifies pet stats with trade-offs (7B)
+- [x] Can purchase equipment and upgrades with XP (7C)
+- [x] Player progression tracked and persisted (7A)
+- [ ] Consumables provide immediate benefits (7D - in progress)
+- [ ] Automation items reduce manual actions (7D - pending)
+- [ ] Multi-pet power-leveling strategies viable (7E)
 
 ### Phase 8 Success
 - [ ] Achievements unlock with XP bonuses
 - [ ] Mini-games provide alternative XP source
 - [ ] Cooldowns prevent mini-game spam
-- [ ] Achievement progress visible across pets
 
 ### Phase 9 Success
 - [ ] Prestige system functional
 - [ ] Prestige bonuses apply on reset
-- [ ] Snapshots improve load time for old pets
 - [ ] Load test: 100+ pets stable
-- [ ] Production Docker build works
 
 ---
 
-## Notes
+## Implementation Notes
 
-- **Design Flexibility:** Balance numbers (XP costs, stat modifiers, multipliers) should be easy to tune without code changes (config files or database)
-- **Event Sourcing Benefits:** Can replay events to test balance changes retroactively
-- **Saga Complexity:** Most complexity in Phase 7B/7D with cross-aggregate coordination
-- **Frontend Readiness:** REST API designed for Next.js frontend (CORS, async, JSON)
-- **Axon Patterns:** Heavy use of sagas for coordination, projections for queries, snapshots for performance
+**Phase 7C Shop System:**
+- ShopCatalog is static (no aggregate), query-only
+- PetCreationService coordinates XP spending before pet creation
+- Multi-Pet Licenses have prerequisite validation (must buy I before II, etc.)
+
+**Phase 7D Consumables (Current):**
+- Consumables are quantity-based (unlike equipment which is instance-based)
+- Equipment modifiers apply: FOOD_EFFICIENCY boosts food consumables, PLAY_EFFICIENCY boosts toys
+- Sickness prevents play action but allows consumable usage
+- Auto-actions will use cheapest available consumable first (Apple before Pizza)
+
+**Axon Patterns:**
+- Heavy use of sagas for coordination (Shop, Equipment, Consumables)
+- Projections for queries (read models)
+- Static catalogs for game data (Shop, Equipment, Consumables)

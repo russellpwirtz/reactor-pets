@@ -9,13 +9,19 @@ import com.reactor.pets.command.MournPetCommand;
 import com.reactor.pets.command.PlayWithPetCommand;
 import com.reactor.pets.command.TimeTickCommand;
 import com.reactor.pets.command.UnequipItemCommand;
+import com.reactor.pets.command.UseConsumableCommand;
+import com.reactor.pets.domain.Consumable;
+import com.reactor.pets.domain.ConsumableCatalog;
 import com.reactor.pets.domain.EquipmentItem;
 import com.reactor.pets.domain.EquipmentSlot;
 import com.reactor.pets.domain.StatModifier;
+import com.reactor.pets.event.ConsumableUsedEvent;
 import com.reactor.pets.event.ItemEquippedEvent;
 import com.reactor.pets.event.ItemUnequippedEvent;
+import com.reactor.pets.event.PetBecameSickEvent;
 import com.reactor.pets.event.PetCleanedEvent;
 import com.reactor.pets.event.PetCreatedEvent;
+import com.reactor.pets.event.PetCuredEvent;
 import com.reactor.pets.event.PetDiedEvent;
 import com.reactor.pets.event.PetEvolvedEvent;
 import com.reactor.pets.event.PetFedEvent;
@@ -56,6 +62,10 @@ public class Pet {
   // Equipment system fields
   private Map<EquipmentSlot, EquipmentItem> equippedItems; // Items currently equipped
   private int maxEquipmentSlots; // Number of slots available (based on stage)
+
+  // Sickness system fields
+  private boolean isSick; // Whether the pet is currently sick
+  private int lowHealthTicks; // Number of consecutive ticks with health < 30
 
   @CommandHandler
   public Pet(CreatePetCommand command) {
@@ -135,6 +145,53 @@ public class Pet {
   }
 
   @CommandHandler
+  public void handle(UseConsumableCommand command) {
+    // Business rules validation
+    if (!isAlive) {
+      throw new IllegalStateException("Cannot use consumable on a dead pet");
+    }
+    if (command.getConsumableType() == null) {
+      throw new IllegalArgumentException("Consumable type cannot be null");
+    }
+
+    // Sick pets cannot play, but can use consumables
+    if (this.isSick && command.getConsumableType() == com.reactor.pets.domain.ConsumableType.PREMIUM_TOY) {
+      throw new IllegalStateException("Sick pets cannot use toys");
+    }
+
+    // Look up consumable in catalog
+    Consumable consumable = ConsumableCatalog.getConsumable(command.getConsumableType())
+        .orElseThrow(() -> new IllegalArgumentException("Unknown consumable type: " + command.getConsumableType()));
+
+    // Apply equipment modifiers to consumable effects
+    double foodEfficiency = 1.0 + getTotalModifier(StatModifier.FOOD_EFFICIENCY);
+    double playEfficiency = 1.0 + getTotalModifier(StatModifier.PLAY_EFFICIENCY);
+
+    // Calculate actual restoration amounts with equipment modifiers
+    int hungerRestored = (int) Math.ceil(consumable.getHungerRestore() * foodEfficiency);
+    hungerRestored = Math.min(hungerRestored, this.hunger);
+
+    int happinessRestored = (int) Math.ceil(consumable.getHappinessRestore() * playEfficiency);
+    happinessRestored = Math.min(happinessRestored, 100 - this.happiness);
+
+    int healthRestored = consumable.getHealthRestore();
+    healthRestored = Math.min(healthRestored, 100 - this.health);
+
+    boolean curedSickness = consumable.isCuresSickness() && this.isSick;
+
+    // Apply event
+    AggregateLifecycle.apply(
+        new ConsumableUsedEvent(
+            command.getPetId(),
+            command.getConsumableType(),
+            hungerRestored,
+            happinessRestored,
+            healthRestored,
+            curedSickness,
+            Instant.now()));
+  }
+
+  @CommandHandler
   public void handle(EvolvePetCommand command) {
     // Business rules validation
     if (!isAlive) {
@@ -176,6 +233,8 @@ public class Pet {
     this.xpMultiplier = 1.0; // Start with 1.0x multiplier
     this.equippedItems = new HashMap<>();
     this.maxEquipmentSlots = 0; // Eggs have no equipment slots
+    this.isSick = false;
+    this.lowHealthTicks = 0;
   }
 
   @EventSourcingHandler
@@ -192,6 +251,31 @@ public class Pet {
   @EventSourcingHandler
   public void on(PetCleanedEvent event) {
     this.health = Math.min(100, this.health + event.getHealthIncrease());
+  }
+
+  @EventSourcingHandler
+  public void on(ConsumableUsedEvent event) {
+    // Apply consumable effects
+    this.hunger = Math.max(0, this.hunger - event.getHungerRestored());
+    this.happiness = Math.min(100, this.happiness + event.getHappinessRestored());
+    this.health = Math.min(100, this.health + event.getHealthRestored());
+
+    // Cure sickness if consumable has that effect
+    if (event.isCuredSickness()) {
+      this.isSick = false;
+      this.lowHealthTicks = 0;
+    }
+  }
+
+  @EventSourcingHandler
+  public void on(PetBecameSickEvent event) {
+    this.isSick = true;
+  }
+
+  @EventSourcingHandler
+  public void on(PetCuredEvent event) {
+    this.isSick = false;
+    this.lowHealthTicks = 0;
   }
 
   @EventSourcingHandler
