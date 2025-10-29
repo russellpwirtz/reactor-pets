@@ -106,7 +106,7 @@ class PetManagerServiceTest {
 
     // When
     List<PetStatusView> result =
-        petManagerService.getLeaderboard(GetLeaderboardQuery.LeaderboardType.AGE);
+        petManagerService.getLeaderboard(GetLeaderboardQuery.LeaderboardType.AGE, true);
 
     // Then
     assertThat(result).hasSize(2);
@@ -121,7 +121,7 @@ class PetManagerServiceTest {
 
     // When
     List<PetStatusView> result =
-        petManagerService.getLeaderboard(GetLeaderboardQuery.LeaderboardType.HAPPINESS);
+        petManagerService.getLeaderboard(GetLeaderboardQuery.LeaderboardType.HAPPINESS, true);
 
     // Then
     assertThat(result).hasSize(2);
@@ -135,6 +135,8 @@ class PetManagerServiceTest {
         .thenReturn(CompletableFuture.completedFuture(mockStatistics));
     when(queryGateway.query(any(GetAlivePetsQuery.class), any(ResponseType.class)))
         .thenReturn(CompletableFuture.completedFuture(mockAlivePets));
+    when(queryGateway.query(any(GetPlayerProgressionQuery.class), eq(PlayerProgressionView.class)))
+        .thenReturn(CompletableFuture.completedFuture(null));
 
     // When
     String dashboard = petManagerService.getDashboard();
@@ -155,6 +157,8 @@ class PetManagerServiceTest {
         .thenReturn(CompletableFuture.completedFuture(mockStatistics));
     when(queryGateway.query(any(GetAlivePetsQuery.class), any(ResponseType.class)))
         .thenReturn(CompletableFuture.completedFuture(List.of()));
+    when(queryGateway.query(any(GetPlayerProgressionQuery.class), eq(PlayerProgressionView.class)))
+        .thenReturn(CompletableFuture.completedFuture(null));
 
     // When
     String dashboard = petManagerService.getDashboard();
@@ -197,6 +201,8 @@ class PetManagerServiceTest {
         .thenReturn(CompletableFuture.completedFuture(mockStatistics));
     when(queryGateway.query(any(GetAlivePetsQuery.class), any(ResponseType.class)))
         .thenReturn(CompletableFuture.completedFuture(List.of(criticalPet)));
+    when(queryGateway.query(any(GetPlayerProgressionQuery.class), eq(PlayerProgressionView.class)))
+        .thenReturn(CompletableFuture.completedFuture(null));
 
     // When
     String dashboard = petManagerService.getDashboard();

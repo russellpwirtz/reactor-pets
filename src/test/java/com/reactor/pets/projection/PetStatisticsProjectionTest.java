@@ -198,7 +198,7 @@ class PetStatisticsProjectionTest {
 
     // When
     List<PetStatusView> result =
-        projection.handle(new GetLeaderboardQuery(GetLeaderboardQuery.LeaderboardType.AGE));
+        projection.handle(new GetLeaderboardQuery(GetLeaderboardQuery.LeaderboardType.AGE, true));
 
     // Then
     assertThat(result).hasSize(3);
@@ -214,7 +214,7 @@ class PetStatisticsProjectionTest {
 
     // When
     List<PetStatusView> result =
-        projection.handle(new GetLeaderboardQuery(GetLeaderboardQuery.LeaderboardType.HAPPINESS));
+        projection.handle(new GetLeaderboardQuery(GetLeaderboardQuery.LeaderboardType.HAPPINESS, true));
 
     // Then
     assertThat(result).hasSize(3);
@@ -235,7 +235,7 @@ class PetStatisticsProjectionTest {
 
     // When
     List<PetStatusView> result =
-        projection.handle(new GetLeaderboardQuery(GetLeaderboardQuery.LeaderboardType.AGE));
+        projection.handle(new GetLeaderboardQuery(GetLeaderboardQuery.LeaderboardType.AGE, true));
 
     // Then
     assertThat(result).hasSize(10);

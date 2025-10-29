@@ -48,6 +48,7 @@ public class PetStatusProjection {
     view.setAlive(true);
     view.setAge(0);
     view.setTotalTicks(0);
+    view.setXpMultiplier(1.0);
     view.setLastUpdated(event.getTimestamp());
 
     petStatusRepository.save(view);
@@ -168,6 +169,7 @@ public class PetStatusProjection {
               view.setHappiness(newHappiness);
               view.setAge(view.getAge() + event.getAgeIncrease());
               view.setTotalTicks(view.getTotalTicks() + 1);
+              view.setXpMultiplier(event.getNewXpMultiplier());
               view.setLastUpdated(event.getTimestamp());
               petStatusRepository.save(view);
               log.debug(

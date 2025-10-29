@@ -41,6 +41,9 @@ public class PetStatusResponse {
   @Schema(description = "Total ticks the pet has experienced", example = "50")
   private int totalTicks;
 
+  @Schema(description = "XP multiplier for this pet", example = "1.5")
+  private double xpMultiplier;
+
   @Schema(description = "Hunger level (0-100)", example = "45")
   private int hunger;
 

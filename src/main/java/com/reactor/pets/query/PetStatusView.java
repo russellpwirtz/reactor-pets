@@ -35,6 +35,7 @@ public class PetStatusView {
   private boolean isAlive;
   private int age;
   private int totalTicks;
+  private double xpMultiplier;
   private Instant lastUpdated;
 
   @Override
@@ -62,6 +63,7 @@ public class PetStatusView {
                 Evolution Path: %s
                 Status: %s
                 Age: %d
+                XP Multiplier: %.2fx
 
                 Stats:
                   Hunger: %d/100%s
@@ -76,6 +78,7 @@ public class PetStatusView {
         evolutionPathDisplay,
         isAlive ? "Alive" : "Dead",
         age,
+        xpMultiplier,
         hunger,
         hungerIndicator,
         happiness,

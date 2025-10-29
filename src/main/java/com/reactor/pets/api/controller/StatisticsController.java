@@ -102,6 +102,7 @@ public class StatisticsController {
         .isAlive(view.isAlive())
         .age(view.getAge())
         .totalTicks(view.getTotalTicks())
+        .xpMultiplier(view.getXpMultiplier())
         .hunger(view.getHunger())
         .happiness(view.getHappiness())
         .health(view.getHealth())

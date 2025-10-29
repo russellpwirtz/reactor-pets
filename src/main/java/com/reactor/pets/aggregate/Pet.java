@@ -39,6 +39,7 @@ public class Pet {
   private int age; // Age in units (every 10 ticks = 1 age)
   private int totalTicks; // Total time ticks elapsed
   private long lastTickSequence; // Last processed tick sequence (for idempotency)
+  private double xpMultiplier; // Multiplier for XP earned from/by this pet (starts at 1.0)
 
   @CommandHandler
   public Pet(CreatePetCommand command) {
@@ -148,6 +149,7 @@ public class Pet {
     this.age = 0;
     this.totalTicks = 0;
     this.lastTickSequence = -1;
+    this.xpMultiplier = 1.0; // Start with 1.0x multiplier
   }
 
   @EventSourcingHandler
@@ -206,6 +208,23 @@ public class Pet {
     // Every 10 ticks = 1 age unit
     int ageIncrease = ((totalTicks + 1) % 10 == 0) ? 1 : 0;
 
+    // Calculate XP multiplier change
+    // Increases by +0.1x every 50 ticks
+    double xpMultiplierChange = 0.0;
+    if ((totalTicks + 1) % 50 == 0) {
+      xpMultiplierChange = 0.1;
+    }
+
+    // Check for care quality bonus: +0.05x if all stats >70 for this tick
+    // (Simplified: check current stats after this tick's changes)
+    int futureHunger = Math.min(100, this.hunger + hungerIncrease);
+    int futureHappiness = Math.max(0, this.happiness - happinessDecrease);
+    if (futureHunger <= 30 && futureHappiness >= 70 && this.health >= 70) {
+      xpMultiplierChange += 0.05;
+    }
+
+    double newXpMultiplier = this.xpMultiplier + xpMultiplierChange;
+
     // Apply time passed event
     AggregateLifecycle.apply(
         new TimePassedEvent(
@@ -214,6 +233,8 @@ public class Pet {
             happinessDecrease,
             ageIncrease,
             command.getTickCount(),
+            xpMultiplierChange,
+            newXpMultiplier,
             Instant.now()));
 
     // Calculate health deterioration after time has passed
@@ -263,6 +284,7 @@ public class Pet {
     this.age += event.getAgeIncrease();
     this.totalTicks++;
     this.lastTickSequence = event.getTickCount();
+    this.xpMultiplier = event.getNewXpMultiplier();
   }
 
   @EventSourcingHandler

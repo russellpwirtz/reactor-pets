@@ -2,9 +2,11 @@ package com.reactor.pets.service;
 
 import com.reactor.pets.query.GetAlivePetsQuery;
 import com.reactor.pets.query.GetLeaderboardQuery;
+import com.reactor.pets.query.GetPlayerProgressionQuery;
 import com.reactor.pets.query.GetStatisticsQuery;
 import com.reactor.pets.query.PetStatistics;
 import com.reactor.pets.query.PetStatusView;
+import com.reactor.pets.query.PlayerProgressionView;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,8 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @RequiredArgsConstructor
 public class PetManagerService {
+
+  private static final String PLAYER_ID = "PLAYER"; // Single-player for now
 
   private final QueryGateway queryGateway;
 
@@ -61,6 +65,16 @@ public class PetManagerService {
   }
 
   /**
+   * Get player progression information.
+   *
+   * @return Player progression view, or null if not initialized
+   */
+  public PlayerProgressionView getPlayerProgression() {
+    log.debug("Getting player progression");
+    return queryGateway.query(new GetPlayerProgressionQuery(PLAYER_ID), PlayerProgressionView.class).join();
+  }
+
+  /**
    * Get a formatted dashboard string with statistics and all alive pets.
    *
    * @return Formatted dashboard string
@@ -70,8 +84,22 @@ public class PetManagerService {
 
     PetStatistics stats = getGlobalStatistics();
     List<PetStatusView> alivePets = getAlivePets();
+    PlayerProgressionView progression = getPlayerProgression();
 
     StringBuilder sb = new StringBuilder();
+
+    // Add player progression section
+    if (progression != null) {
+      sb.append("\n");
+      sb.append("╔════════════════════════════════════════════════════════════╗\n");
+      sb.append("║                 PLAYER PROGRESSION                        ║\n");
+      sb.append("╚════════════════════════════════════════════════════════════╝\n");
+      sb.append(String.format("  Current XP: %,d%n", progression.getTotalXP()));
+      sb.append(String.format("  Lifetime XP: %,d%n", progression.getLifetimeXPEarned()));
+      sb.append(String.format("  Total Pets Created: %d%n", progression.getTotalPetsCreated()));
+      sb.append("\n");
+    }
+
     sb.append(stats.toString());
 
     if (!alivePets.isEmpty()) {

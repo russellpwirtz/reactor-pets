@@ -79,21 +79,21 @@ class PetTimeSystemTest {
       fixture
           .given(
               new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 1, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 2, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 3, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 4, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 5, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 6, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 7, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 8, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 9, Instant.now()))
+              new TimePassedEvent(petId, 3, 2, 0, 1, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 2, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 3, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 4, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 5, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 6, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 7, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 8, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 9, 0.0, 0.0, Instant.now()))
           .when(new TimeTickCommand(petId, 10))
           .expectSuccessfulHandlerExecution()
           .expectEventsMatching(
               matches(
                   events -> {
-                    if (events.isEmpty()) {
+                    if (events.size() == 0) {
                       return false;
                     }
                     EventMessage<?> eventMsg = (EventMessage<?>) events.get(0);
@@ -114,7 +114,7 @@ class PetTimeSystemTest {
       fixture
           .given(
               new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 5, Instant.now()))
+              new TimePassedEvent(petId, 3, 2, 0, 5, 0.0, 0.0, Instant.now()))
           .when(new TimeTickCommand(petId, 5))
           .expectSuccessfulHandlerExecution()
           .expectNoEvents(); // Should be ignored
@@ -128,7 +128,7 @@ class PetTimeSystemTest {
       fixture
           .given(
               new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 10, Instant.now()))
+              new TimePassedEvent(petId, 3, 2, 0, 10, 0.0, 0.0, Instant.now()))
           .when(new TimeTickCommand(petId, 5))
           .expectSuccessfulHandlerExecution()
           .expectNoEvents(); // Should be ignored (old tick)
@@ -149,31 +149,31 @@ class PetTimeSystemTest {
               new PetPlayedWithEvent(petId, 10, 5, Instant.now()),
               new PetPlayedWithEvent(petId, 5, 5, Instant.now()),
               // Now at 45 hunger
-              new TimePassedEvent(petId, 3, 2, 0, 1, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 2, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 3, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 4, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 5, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 6, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 7, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 8, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 9, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 10, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 11, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 12, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 13, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 14, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 15, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 16, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 17, Instant.now()),
-              new TimePassedEvent(petId, 2, 2, 0, 18, Instant.now()) // Hunger now at 98
+              new TimePassedEvent(petId, 3, 2, 0, 1, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 2, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 3, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 4, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 5, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 6, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 7, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 8, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 9, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 10, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 11, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 12, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 13, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 14, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 15, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 16, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 17, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 2, 2, 0, 18, 0.0, 0.0, Instant.now()) // Hunger now at 98
               )
           .when(new TimeTickCommand(petId, 19))
           .expectSuccessfulHandlerExecution()
           .expectEventsMatching(
               matches(
                   events -> {
-                    if (events.isEmpty()) {
+                    if (events.size() == 0) {
                       return false;
                     }
                     EventMessage<?> eventMsg = (EventMessage<?>) events.get(0);
@@ -196,48 +196,48 @@ class PetTimeSystemTest {
               new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
               // Happiness starts at 70
               // Decrease by 2 per tick - need 35 ticks to reach 0
-              new TimePassedEvent(petId, 3, 2, 0, 1, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 2, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 3, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 4, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 5, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 6, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 7, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 8, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 9, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 10, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 11, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 12, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 13, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 14, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 15, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 16, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 17, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 18, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 19, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 20, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 21, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 22, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 23, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 24, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 25, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 26, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 27, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 28, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 29, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 30, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 31, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 32, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 33, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 34, Instant.now()),
-              new TimePassedEvent(petId, 3, 1, 0, 35, Instant.now()) // Happiness now at 1
+              new TimePassedEvent(petId, 3, 2, 0, 1, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 2, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 3, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 4, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 5, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 6, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 7, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 8, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 9, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 10, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 11, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 12, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 13, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 14, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 15, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 16, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 17, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 18, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 19, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 20, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 21, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 22, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 23, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 24, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 25, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 26, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 27, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 28, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 29, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 30, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 31, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 32, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 33, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 34, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 1, 0, 35, 0.0, 0.0, Instant.now()) // Happiness now at 1
               )
           .when(new TimeTickCommand(petId, 36))
           .expectSuccessfulHandlerExecution()
           .expectEventsMatching(
               matches(
                   events -> {
-                    if (events.isEmpty()) {
+                    if (events.size() == 0) {
                       return false;
                     }
                     EventMessage<?> eventMsg = (EventMessage<?>) events.get(0);
@@ -270,18 +270,18 @@ class PetTimeSystemTest {
               new PetPlayedWithEvent(petId, 10, 5, Instant.now()),
               new PetPlayedWithEvent(petId, 5, 5, Instant.now()),
               // Now at 45 hunger
-              new TimePassedEvent(petId, 3, 2, 0, 1, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 2, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 3, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 4, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 5, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 6, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 7, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 8, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 9, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 10, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 11, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 12, Instant.now()) // Now at 81
+              new TimePassedEvent(petId, 3, 2, 0, 1, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 2, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 3, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 4, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 5, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 6, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 7, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 8, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 9, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 10, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 11, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 12, 0.0, 0.0, Instant.now()) // Now at 81
               )
           .when(new TimeTickCommand(petId, 13))
           .expectSuccessfulHandlerExecution()
@@ -325,37 +325,37 @@ class PetTimeSystemTest {
               // Need (70-19)/2 = 25.5, so 26 ticks to get to 18
               // But we need to keep hunger below 80
               // After feeding, hunger is low, then time ticks increase it
-              new TimePassedEvent(petId, 3, 2, 0, 1, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 2, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 3, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 4, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 5, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 6, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 7, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 8, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 9, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 10, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 1, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 2, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 3, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 4, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 5, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 6, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 7, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 8, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 9, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 10, 0.0, 0.0, Instant.now()),
               // Feed to reduce hunger (hunger is now 60)
               new PetFedEvent(petId, 30, Instant.now()),
               // Continue time passing (hunger is now 30)
-              new TimePassedEvent(petId, 3, 2, 0, 11, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 12, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 13, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 14, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 15, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 16, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 17, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 18, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 19, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 20, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 11, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 12, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 13, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 14, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 15, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 16, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 17, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 18, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 19, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 20, 0.0, 0.0, Instant.now()),
               // Feed again to keep hunger low (hunger was 60, now 30)
               new PetFedEvent(petId, 30, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 21, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 22, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 23, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 24, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 25, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 26, Instant.now())
+              new TimePassedEvent(petId, 3, 2, 0, 21, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 22, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 23, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 24, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 25, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 26, 0.0, 0.0, Instant.now())
               // Hunger is now 48, happiness is 18
               )
           .when(new TimeTickCommand(petId, 27))
@@ -395,43 +395,43 @@ class PetTimeSystemTest {
               new PetPlayedWithEvent(petId, 10, 5, Instant.now()),
               new PetPlayedWithEvent(petId, 5, 5, Instant.now()),
               // Now at 45 hunger, 100 happiness
-              new TimePassedEvent(petId, 3, 2, 0, 1, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 2, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 3, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 4, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 5, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 6, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 7, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 8, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 9, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 10, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 11, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 12, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 13, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 14, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 15, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 16, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 17, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 18, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 19, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 20, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 21, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 22, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 23, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 24, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 25, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 26, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 27, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 28, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 29, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 30, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 31, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 32, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 33, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 34, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 35, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 36, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 37, Instant.now()) // hunger at 156 (capped 100), happiness 26
+              new TimePassedEvent(petId, 3, 2, 0, 1, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 2, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 3, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 4, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 5, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 6, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 7, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 8, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 9, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 10, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 11, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 12, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 13, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 14, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 15, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 16, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 17, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 18, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 19, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 20, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 21, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 22, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 23, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 24, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 25, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 26, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 27, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 28, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 29, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 30, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 31, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 32, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 33, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 34, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 35, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 36, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 37, 0.0, 0.0, Instant.now()) // hunger at 156 (capped 100), happiness 26
               )
           .when(new TimeTickCommand(petId, 38))
           .expectSuccessfulHandlerExecution()
@@ -474,18 +474,18 @@ class PetTimeSystemTest {
               new PetPlayedWithEvent(petId, 10, 5, Instant.now()),
               new PetPlayedWithEvent(petId, 5, 5, Instant.now()),
               // Lots of time ticks to increase hunger and decrease health
-              new TimePassedEvent(petId, 3, 2, 0, 1, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 2, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 3, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 4, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 5, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 6, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 7, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 8, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 9, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 10, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 11, Instant.now()),
-              new TimePassedEvent(petId, 3, 2, 0, 12, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 1, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 2, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 3, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 4, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 5, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 6, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 7, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 8, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 9, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 10, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 11, 0.0, 0.0, Instant.now()),
+              new TimePassedEvent(petId, 3, 2, 0, 12, 0.0, 0.0, Instant.now()),
               // Health deterioration events
               new PetHealthDeterioratedEvent(petId, 5, "Extreme hunger", Instant.now()),
               new PetHealthDeterioratedEvent(petId, 5, "Extreme hunger", Instant.now()),
