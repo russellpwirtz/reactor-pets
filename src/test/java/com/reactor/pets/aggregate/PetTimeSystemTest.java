@@ -11,6 +11,7 @@ import com.reactor.pets.event.PetHealthDeterioratedEvent;
 import com.reactor.pets.event.PetPlayedWithEvent;
 import com.reactor.pets.event.TimePassedEvent;
 import java.time.Instant;
+import java.util.ArrayList;
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.test.aggregate.AggregateTestFixture;
 import org.axonframework.test.aggregate.FixtureConfiguration;
@@ -536,7 +537,7 @@ class PetTimeSystemTest {
       fixture
           .given(
               new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
-              new PetDiedEvent(petId, 5, 50, "Health reached zero", Instant.now()))
+              new PetDiedEvent(petId, 5, 50, "Health reached zero", new ArrayList<>(), Instant.now()))
           .when(new TimeTickCommand(petId, 51))
           .expectSuccessfulHandlerExecution()
           .expectNoEvents(); // Dead pet should not process time ticks
@@ -550,7 +551,7 @@ class PetTimeSystemTest {
       fixture
           .given(
               new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
-              new PetDiedEvent(petId, 5, 50, "Health reached zero", Instant.now()))
+              new PetDiedEvent(petId, 5, 50, "Health reached zero", new ArrayList<>(), Instant.now()))
           .when(new FeedPetCommand(petId, 20))
           .expectException(IllegalStateException.class)
           .expectExceptionMessage("Cannot feed a dead pet");

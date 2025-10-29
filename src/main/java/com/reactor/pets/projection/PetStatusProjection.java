@@ -1,12 +1,15 @@
 package com.reactor.pets.projection;
 
 import com.reactor.pets.aggregate.EvolutionPath;
+import com.reactor.pets.event.ItemEquippedEvent;
+import com.reactor.pets.event.ItemUnequippedEvent;
 import com.reactor.pets.event.PetCleanedEvent;
 import com.reactor.pets.event.PetCreatedEvent;
 import com.reactor.pets.event.PetDiedEvent;
 import com.reactor.pets.event.PetEvolvedEvent;
 import com.reactor.pets.event.PetFedEvent;
 import com.reactor.pets.event.PetHealthDeterioratedEvent;
+import com.reactor.pets.event.PetMournedEvent;
 import com.reactor.pets.event.PetPlayedWithEvent;
 import com.reactor.pets.event.TimePassedEvent;
 import com.reactor.pets.query.GetAlivePetsQuery;
@@ -14,6 +17,7 @@ import com.reactor.pets.query.GetAllPetsQuery;
 import com.reactor.pets.query.GetPetStatusQuery;
 import com.reactor.pets.query.PetStatusRepository;
 import com.reactor.pets.query.PetStatusView;
+import java.util.HashMap;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +53,8 @@ public class PetStatusProjection {
     view.setAge(0);
     view.setTotalTicks(0);
     view.setXpMultiplier(1.0);
+    view.setEquippedItems(new HashMap<>());
+    view.setMaxEquipmentSlots(0); // Eggs have no equipment slots
     view.setLastUpdated(event.getTimestamp());
 
     petStatusRepository.save(view);
@@ -133,15 +139,26 @@ public class PetStatusProjection {
             view -> {
               view.setStage(event.getNewStage());
               view.setEvolutionPath(event.getEvolutionPath());
+
+              // Update equipment slots based on stage: Baby=1, Teen=2, Adult=3
+              int newSlots = switch (event.getNewStage()) {
+                case BABY -> 1;
+                case TEEN -> 2;
+                case ADULT -> 3;
+                default -> 0; // EGG has 0 slots
+              };
+              view.setMaxEquipmentSlots(newSlots);
+
               view.setLastUpdated(event.getTimestamp());
               petStatusRepository.save(view);
               log.info(
-                  "Pet {} evolved from {} to {} with {} path. Reason: {}",
+                  "Pet {} evolved from {} to {} with {} path. Reason: {}. Equipment slots: {}",
                   view.getName(),
                   event.getOldStage(),
                   event.getNewStage(),
                   event.getEvolutionPath(),
-                  event.getEvolutionReason());
+                  event.getEvolutionReason(),
+                  newSlots);
             });
   }
 
@@ -237,5 +254,67 @@ public class PetStatusProjection {
     log.debug("Handling GetAlivePetsQuery");
 
     return petStatusRepository.findByIsAlive(true);
+  }
+
+  @EventHandler
+  @Transactional
+  public void on(ItemEquippedEvent event) {
+    log.debug("Processing ItemEquippedEvent for petId: {}", event.getPetId());
+
+    petStatusRepository
+        .findById(event.getPetId())
+        .ifPresent(
+            view -> {
+              view.getEquippedItems().put(event.getSlot().name(), event.getItem());
+              view.setLastUpdated(event.getTimestamp());
+              petStatusRepository.save(view);
+              log.info(
+                  "Pet {} equipped {} in slot {}",
+                  view.getName(),
+                  event.getItem().getName(),
+                  event.getSlot());
+            });
+  }
+
+  @EventHandler
+  @Transactional
+  public void on(ItemUnequippedEvent event) {
+    log.debug("Processing ItemUnequippedEvent for petId: {}", event.getPetId());
+
+    petStatusRepository
+        .findById(event.getPetId())
+        .ifPresent(
+            view -> {
+              view.getEquippedItems().remove(event.getSlot().name());
+              view.setLastUpdated(event.getTimestamp());
+              petStatusRepository.save(view);
+              log.info(
+                  "Pet {} unequipped {} from slot {}",
+                  view.getName(),
+                  event.getItem().getName(),
+                  event.getSlot());
+            });
+  }
+
+  @EventHandler
+  @Transactional
+  public void on(PetMournedEvent event) {
+    log.debug("Processing PetMournedEvent for petId: {}", event.getPetId());
+
+    petStatusRepository
+        .findById(event.getPetId())
+        .ifPresent(
+            view -> {
+              int newHappiness = Math.max(0, view.getHappiness() - event.getHappinessLoss());
+              view.setHappiness(newHappiness);
+              view.setLastUpdated(event.getTimestamp());
+              petStatusRepository.save(view);
+              log.info(
+                  "Pet {} mourned the death of pet {}. Happiness decreased by {} to {}",
+                  view.getName(),
+                  event.getDeceasedPetId(),
+                  event.getHappinessLoss(),
+                  newHappiness);
+            });
   }
 }

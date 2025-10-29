@@ -1,8 +1,13 @@
 package com.reactor.pets.service;
 
+import com.reactor.pets.command.InitializeInventoryCommand;
 import com.reactor.pets.command.InitializePlayerCommand;
+import com.reactor.pets.domain.EquipmentItem;
+import com.reactor.pets.domain.StarterEquipment;
 import com.reactor.pets.query.GetPlayerProgressionQuery;
 import com.reactor.pets.query.PlayerProgressionView;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -21,6 +26,7 @@ import org.springframework.stereotype.Service;
 public class PlayerInitializationService {
 
   private static final String PLAYER_ID = "PLAYER"; // Single-player for now
+  private static final String INVENTORY_ID = "PLAYER_INVENTORY"; // Inventory ID (must be different from PLAYER_ID)
   private static final long STARTING_XP = 100L; // Starting XP as per Phase 7C design
 
   private final CommandGateway commandGateway;
@@ -53,6 +59,15 @@ public class PlayerInitializationService {
       log.info("Initializing player with {} starting XP", STARTING_XP);
       commandGateway.sendAndWait(new InitializePlayerCommand(PLAYER_ID, STARTING_XP));
       log.info("Player initialized successfully!");
+
+      // Initialize inventory with starter equipment
+      List<EquipmentItem> starterItems = new ArrayList<>();
+      starterItems.add(StarterEquipment.createBasicBowl());
+      starterItems.add(StarterEquipment.createSimpleToy());
+      starterItems.add(StarterEquipment.createComfortBlanket());
+      log.info("Initializing player inventory with {} starter items", starterItems.size());
+      commandGateway.sendAndWait(new InitializeInventoryCommand(INVENTORY_ID, starterItems));
+      log.info("Inventory initialized successfully!");
     } catch (Exception e) {
       log.error("Failed to initialize player", e);
       throw new RuntimeException("Failed to initialize player", e);

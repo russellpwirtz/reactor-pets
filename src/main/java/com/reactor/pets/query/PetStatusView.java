@@ -3,16 +3,22 @@ package com.reactor.pets.query;
 import com.reactor.pets.aggregate.EvolutionPath;
 import com.reactor.pets.aggregate.PetStage;
 import com.reactor.pets.aggregate.PetType;
+import com.reactor.pets.domain.EquipmentItem;
 import com.reactor.pets.util.PetAsciiArt;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "pet_status")
@@ -37,6 +43,12 @@ public class PetStatusView {
   private int totalTicks;
   private double xpMultiplier;
   private Instant lastUpdated;
+
+  @Column(name = "equipped_items", columnDefinition = "TEXT")
+  @JdbcTypeCode(SqlTypes.JSON)
+  private Map<String, EquipmentItem> equippedItems = new HashMap<>();
+
+  private int maxEquipmentSlots;
 
   @Override
   public String toString() {

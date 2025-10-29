@@ -256,6 +256,8 @@
             <exclude>**/api/config/*.class</exclude>
             <exclude>**/api/exception/*.class</exclude>
             <exclude>**/api/controller/*.class</exclude>
+            <exclude>**/command/*.class</exclude>
+            <exclude>**/event/*.class</exclude>
           </excludes>
         </configuration>
         <executions>

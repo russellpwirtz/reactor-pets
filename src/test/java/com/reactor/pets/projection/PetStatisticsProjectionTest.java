@@ -66,7 +66,7 @@ class PetStatisticsProjectionTest {
   void shouldIncrementTotalPetsDiedOnPetDiedEvent() {
     // Given
     when(statisticsRepository.findById("GLOBAL")).thenReturn(Optional.of(mockStats));
-    PetDiedEvent event = new PetDiedEvent("pet-1", 50, 500, "Hunger", Instant.now());
+    PetDiedEvent event = new PetDiedEvent("pet-1", 50, 500, "Hunger", new ArrayList<>(), Instant.now());
     PetStatusView petView = new PetStatusView();
     petView.setName("Fluffy");
     when(petStatusRepository.findById("pet-1")).thenReturn(Optional.of(petView));
@@ -88,7 +88,7 @@ class PetStatisticsProjectionTest {
     mockStats.setLongestLivedPetAge(30);
     when(statisticsRepository.findById("GLOBAL")).thenReturn(Optional.of(mockStats));
 
-    PetDiedEvent event = new PetDiedEvent("pet-2", 50, 500, "Old age", Instant.now());
+    PetDiedEvent event = new PetDiedEvent("pet-2", 50, 500, "Old age", new ArrayList<>(), Instant.now());
     PetStatusView petView = new PetStatusView();
     petView.setName("OldTimer");
     when(petStatusRepository.findById("pet-2")).thenReturn(Optional.of(petView));
@@ -113,7 +113,7 @@ class PetStatisticsProjectionTest {
     mockStats.setLongestLivedPetName("Champion");
     when(statisticsRepository.findById("GLOBAL")).thenReturn(Optional.of(mockStats));
 
-    PetDiedEvent event = new PetDiedEvent("pet-3", 50, 500, "Hunger", Instant.now());
+    PetDiedEvent event = new PetDiedEvent("pet-3", 50, 500, "Hunger", new ArrayList<>(), Instant.now());
 
     // When
     projection.on(event);

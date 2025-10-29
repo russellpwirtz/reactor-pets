@@ -18,6 +18,7 @@ import com.reactor.pets.event.PetHealthDeterioratedEvent;
 import com.reactor.pets.event.PetPlayedWithEvent;
 import com.reactor.pets.event.TimePassedEvent;
 import java.time.Instant;
+import java.util.ArrayList;
 import org.axonframework.test.saga.SagaTestFixture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -169,7 +170,7 @@ class PetEvolutionSagaTest {
   void shouldEndSagaOnPetDiedEvent() {
     fixture
         .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, NOW))
-        .whenPublishingA(new PetDiedEvent(PET_ID, 10, 100, "Neglect", NOW))
+        .whenPublishingA(new PetDiedEvent(PET_ID, 10, 100, "Neglect", new ArrayList<>(), NOW))
         .expectActiveSagas(0); // Saga should end
   }
 

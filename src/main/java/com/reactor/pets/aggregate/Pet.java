@@ -2,19 +2,31 @@ package com.reactor.pets.aggregate;
 
 import com.reactor.pets.command.CleanPetCommand;
 import com.reactor.pets.command.CreatePetCommand;
+import com.reactor.pets.command.EquipItemCommand;
 import com.reactor.pets.command.EvolvePetCommand;
 import com.reactor.pets.command.FeedPetCommand;
+import com.reactor.pets.command.MournPetCommand;
 import com.reactor.pets.command.PlayWithPetCommand;
 import com.reactor.pets.command.TimeTickCommand;
+import com.reactor.pets.command.UnequipItemCommand;
+import com.reactor.pets.domain.EquipmentItem;
+import com.reactor.pets.domain.EquipmentSlot;
+import com.reactor.pets.domain.StatModifier;
+import com.reactor.pets.event.ItemEquippedEvent;
+import com.reactor.pets.event.ItemUnequippedEvent;
 import com.reactor.pets.event.PetCleanedEvent;
 import com.reactor.pets.event.PetCreatedEvent;
 import com.reactor.pets.event.PetDiedEvent;
 import com.reactor.pets.event.PetEvolvedEvent;
 import com.reactor.pets.event.PetFedEvent;
 import com.reactor.pets.event.PetHealthDeterioratedEvent;
+import com.reactor.pets.event.PetMournedEvent;
 import com.reactor.pets.event.PetPlayedWithEvent;
 import com.reactor.pets.event.TimePassedEvent;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.NoArgsConstructor;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -40,6 +52,10 @@ public class Pet {
   private int totalTicks; // Total time ticks elapsed
   private long lastTickSequence; // Last processed tick sequence (for idempotency)
   private double xpMultiplier; // Multiplier for XP earned from/by this pet (starts at 1.0)
+
+  // Equipment system fields
+  private Map<EquipmentSlot, EquipmentItem> equippedItems; // Items currently equipped
+  private int maxEquipmentSlots; // Number of slots available (based on stage)
 
   @CommandHandler
   public Pet(CreatePetCommand command) {
@@ -67,8 +83,11 @@ public class Pet {
       throw new IllegalArgumentException("Food amount must be positive");
     }
 
-    // Calculate hunger reduction (cannot go below 0)
-    int hungerReduction = Math.min(command.getFoodAmount(), this.hunger);
+    // Calculate hunger reduction with equipment modifiers
+    double foodEfficiency = 1.0 + getTotalModifier(StatModifier.FOOD_EFFICIENCY);
+    int baseReduction = command.getFoodAmount();
+    int modifiedReduction = (int) Math.ceil(baseReduction * foodEfficiency);
+    int hungerReduction = Math.min(modifiedReduction, this.hunger);
 
     // Apply event
     AggregateLifecycle.apply(new PetFedEvent(command.getPetId(), hungerReduction, Instant.now()));
@@ -84,8 +103,13 @@ public class Pet {
       throw new IllegalStateException("Pet is already at maximum happiness");
     }
 
-    // Playing increases happiness (+15) but also increases hunger (+5)
-    int happinessIncrease = Math.min(15, 100 - this.happiness);
+    // Playing increases happiness with equipment modifiers (+15 base)
+    double playEfficiency = 1.0 + getTotalModifier(StatModifier.PLAY_EFFICIENCY);
+    int baseHappinessIncrease = 15;
+    int modifiedHappinessIncrease = (int) Math.ceil(baseHappinessIncrease * playEfficiency);
+    int happinessIncrease = Math.min(modifiedHappinessIncrease, 100 - this.happiness);
+
+    // Playing also increases hunger (+5)
     int hungerIncrease = Math.min(5, 100 - this.hunger);
 
     // Apply event
@@ -150,6 +174,8 @@ public class Pet {
     this.totalTicks = 0;
     this.lastTickSequence = -1;
     this.xpMultiplier = 1.0; // Start with 1.0x multiplier
+    this.equippedItems = new HashMap<>();
+    this.maxEquipmentSlots = 0; // Eggs have no equipment slots
   }
 
   @EventSourcingHandler
@@ -172,6 +198,22 @@ public class Pet {
   public void on(PetEvolvedEvent event) {
     this.stage = event.getNewStage();
     this.evolutionPath = event.getEvolutionPath();
+
+    // Update equipment slots based on stage: Baby=1, Teen=2, Adult=3
+    switch (event.getNewStage()) {
+      case BABY:
+        this.maxEquipmentSlots = 1;
+        break;
+      case TEEN:
+        this.maxEquipmentSlots = 2;
+        break;
+      case ADULT:
+        this.maxEquipmentSlots = 3;
+        break;
+      default:
+        this.maxEquipmentSlots = 0; // EGG has 0 slots
+        break;
+    }
   }
 
   @CommandHandler
@@ -201,6 +243,13 @@ public class Pet {
       baseHungerIncrease = (int) Math.ceil(baseHungerIncrease * 1.5);
       baseHappinessDecrease = (int) Math.ceil(baseHappinessDecrease * 1.5);
     }
+
+    // Apply equipment modifiers to decay rates
+    double hungerDecayModifier = 1.0 + getTotalModifier(StatModifier.HUNGER_DECAY_RATE);
+    double happinessDecayModifier = 1.0 + getTotalModifier(StatModifier.HAPPINESS_DECAY_RATE);
+
+    baseHungerIncrease = (int) Math.ceil(baseHungerIncrease * hungerDecayModifier);
+    baseHappinessDecrease = (int) Math.ceil(baseHappinessDecrease * happinessDecayModifier);
 
     int hungerIncrease = Math.min(baseHungerIncrease, 100 - this.hunger);
     int happinessDecrease = Math.min(baseHappinessDecrease, this.happiness);
@@ -237,6 +286,17 @@ public class Pet {
             newXpMultiplier,
             Instant.now()));
 
+    // Apply health regeneration from equipment (if any)
+    double healthRegen = getTotalModifier(StatModifier.HEALTH_REGEN);
+    if (healthRegen > 0) {
+      int healthIncrease = (int) Math.ceil(healthRegen);
+      healthIncrease = Math.min(healthIncrease, 100 - this.health);
+      if (healthIncrease > 0) {
+        AggregateLifecycle.apply(
+            new PetCleanedEvent(command.getPetId(), healthIncrease, Instant.now()));
+      }
+    }
+
     // Calculate health deterioration after time has passed
     int newHunger = Math.min(100, this.hunger + hungerIncrease);
     int newHappiness = Math.max(0, this.happiness - happinessDecrease);
@@ -267,12 +327,16 @@ public class Pet {
     // Check for death after health deterioration
     int newHealth = this.health - healthDecrease;
     if (newHealth <= 0) {
+      // Collect equipped items to return to inventory (use ArrayList for Axon serialization)
+      var equippedItemsList = new ArrayList<>(this.equippedItems.values());
+
       AggregateLifecycle.apply(
           new PetDiedEvent(
               command.getPetId(),
               this.age + ageIncrease,
               this.totalTicks + 1,
               "Health reached zero: " + deteriorationReason,
+              equippedItemsList,
               Instant.now()));
     }
   }
@@ -295,5 +359,106 @@ public class Pet {
   @EventSourcingHandler
   public void on(PetDiedEvent event) {
     this.isAlive = false;
+  }
+
+  @CommandHandler
+  public void handle(MournPetCommand command) {
+    // Only alive pets can mourn
+    if (!isAlive) {
+      return; // Silently ignore for dead pets
+    }
+
+    // Apply mourning event
+    AggregateLifecycle.apply(
+        new PetMournedEvent(
+            this.petId,
+            command.getDeceasedPetId(),
+            command.getHappinessLoss(),
+            Instant.now()));
+  }
+
+  @CommandHandler
+  public void handle(EquipItemCommand command) {
+    // Validation
+    if (!isAlive) {
+      throw new IllegalStateException("Cannot equip items to a dead pet");
+    }
+    if (command.getItem() == null) {
+      throw new IllegalArgumentException("Item cannot be null");
+    }
+    if (command.getSlot() == null) {
+      throw new IllegalArgumentException("Slot cannot be null");
+    }
+    if (command.getItem().getSlot() != command.getSlot()) {
+      throw new IllegalArgumentException(
+          "Item slot type " + command.getItem().getSlot() + " does not match target slot " + command.getSlot());
+    }
+
+    // Count currently equipped items
+    int equippedCount = equippedItems.size();
+    boolean isReplacing = equippedItems.containsKey(command.getSlot());
+
+    if (!isReplacing && equippedCount >= maxEquipmentSlots) {
+      throw new IllegalStateException(
+          "Cannot equip more items. Pet has " + maxEquipmentSlots + " slots and " + equippedCount + " items equipped");
+    }
+
+    // Apply event
+    AggregateLifecycle.apply(
+        new ItemEquippedEvent(
+            this.petId,
+            command.getItem(),
+            command.getSlot(),
+            Instant.now()));
+  }
+
+  @CommandHandler
+  public void handle(UnequipItemCommand command) {
+    // Validation
+    if (!isAlive) {
+      throw new IllegalStateException("Cannot unequip items from a dead pet");
+    }
+    if (command.getSlot() == null) {
+      throw new IllegalArgumentException("Slot cannot be null");
+    }
+    if (!equippedItems.containsKey(command.getSlot())) {
+      throw new IllegalStateException("No item equipped in slot " + command.getSlot());
+    }
+
+    // Get the item to unequip
+    EquipmentItem item = equippedItems.get(command.getSlot());
+
+    // Apply event
+    AggregateLifecycle.apply(
+        new ItemUnequippedEvent(
+            this.petId,
+            item,
+            command.getSlot(),
+            Instant.now()));
+  }
+
+  @EventSourcingHandler
+  public void on(ItemEquippedEvent event) {
+    this.equippedItems.put(event.getSlot(), event.getItem());
+  }
+
+  @EventSourcingHandler
+  public void on(ItemUnequippedEvent event) {
+    this.equippedItems.remove(event.getSlot());
+  }
+
+  @EventSourcingHandler
+  public void on(PetMournedEvent event) {
+    this.happiness = Math.max(0, this.happiness - event.getHappinessLoss());
+  }
+
+  /**
+   * Gets the total modifier value for a given stat from all equipped items.
+   * Returns 0.0 if no modifiers are present for that stat.
+   */
+  private double getTotalModifier(StatModifier modifier) {
+    return equippedItems.values().stream()
+        .mapToDouble(item -> item.getModifier(modifier))
+        .sum();
   }
 }
