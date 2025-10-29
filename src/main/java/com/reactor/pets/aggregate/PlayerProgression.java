@@ -2,12 +2,17 @@ package com.reactor.pets.aggregate;
 
 import com.reactor.pets.command.EarnXPCommand;
 import com.reactor.pets.command.InitializePlayerCommand;
+import com.reactor.pets.command.PurchaseUpgradeCommand;
 import com.reactor.pets.command.SpendXPCommand;
+import com.reactor.pets.domain.UpgradeType;
 import com.reactor.pets.event.PetCreatedForPlayerEvent;
 import com.reactor.pets.event.PlayerInitializedEvent;
+import com.reactor.pets.event.UpgradePurchasedEvent;
 import com.reactor.pets.event.XPEarnedEvent;
 import com.reactor.pets.event.XPSpentEvent;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.NoArgsConstructor;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -25,6 +30,7 @@ public class PlayerProgression {
   private long lifetimeXPEarned; // Never decreases, for tracking/achievements
   private int totalPetsCreated;
   private int prestigeLevel; // Future: prestige mechanics
+  private Set<UpgradeType> permanentUpgrades; // Purchased permanent upgrades
 
   @CommandHandler
   public PlayerProgression(InitializePlayerCommand command) {
@@ -98,6 +104,38 @@ public class PlayerProgression {
             Instant.now()));
   }
 
+  @CommandHandler
+  public void handle(PurchaseUpgradeCommand command) {
+    // Business rules validation
+    if (command.getUpgradeType() == null) {
+      throw new IllegalArgumentException("Upgrade type cannot be null");
+    }
+
+    // Check if already purchased
+    if (this.permanentUpgrades != null && this.permanentUpgrades.contains(command.getUpgradeType())) {
+      throw new IllegalStateException("Upgrade already purchased: " + command.getUpgradeType());
+    }
+
+    // Check prerequisites for Multi-Pet Licenses
+    if (command.getUpgradeType() == UpgradeType.MULTI_PET_LICENSE_II) {
+      if (this.permanentUpgrades == null || !this.permanentUpgrades.contains(UpgradeType.MULTI_PET_LICENSE_I)) {
+        throw new IllegalStateException("Multi-Pet License I must be purchased first");
+      }
+    }
+    if (command.getUpgradeType() == UpgradeType.MULTI_PET_LICENSE_III) {
+      if (this.permanentUpgrades == null || !this.permanentUpgrades.contains(UpgradeType.MULTI_PET_LICENSE_II)) {
+        throw new IllegalStateException("Multi-Pet License II must be purchased first");
+      }
+    }
+
+    // Apply event
+    AggregateLifecycle.apply(
+        new UpgradePurchasedEvent(
+            command.getPlayerId(),
+            command.getUpgradeType(),
+            Instant.now()));
+  }
+
   @EventSourcingHandler
   public void on(PlayerInitializedEvent event) {
     this.playerId = event.getPlayerId();
@@ -105,6 +143,7 @@ public class PlayerProgression {
     this.lifetimeXPEarned = event.getStartingXP();
     this.totalPetsCreated = 0;
     this.prestigeLevel = 0;
+    this.permanentUpgrades = new HashSet<>();
   }
 
   @EventSourcingHandler
@@ -121,5 +160,32 @@ public class PlayerProgression {
   @EventSourcingHandler
   public void on(PetCreatedForPlayerEvent event) {
     this.totalPetsCreated = event.getTotalPetsCreated();
+  }
+
+  @EventSourcingHandler
+  public void on(UpgradePurchasedEvent event) {
+    if (this.permanentUpgrades == null) {
+      this.permanentUpgrades = new HashSet<>();
+    }
+    this.permanentUpgrades.add(event.getUpgradeType());
+  }
+
+  /**
+   * Gets the maximum number of pets allowed based on purchased licenses.
+   */
+  public int getMaxPets() {
+    if (this.permanentUpgrades == null) {
+      return 1; // Default: single pet
+    }
+    if (this.permanentUpgrades.contains(UpgradeType.MULTI_PET_LICENSE_III)) {
+      return 4;
+    }
+    if (this.permanentUpgrades.contains(UpgradeType.MULTI_PET_LICENSE_II)) {
+      return 3;
+    }
+    if (this.permanentUpgrades.contains(UpgradeType.MULTI_PET_LICENSE_I)) {
+      return 2;
+    }
+    return 1; // Default: single pet
   }
 }

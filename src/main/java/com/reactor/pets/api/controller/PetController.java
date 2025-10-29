@@ -4,7 +4,6 @@ import com.reactor.pets.api.dto.CreatePetRequest;
 import com.reactor.pets.api.dto.PetHistoryResponse;
 import com.reactor.pets.api.dto.PetStatusResponse;
 import com.reactor.pets.command.CleanPetCommand;
-import com.reactor.pets.command.CreatePetCommand;
 import com.reactor.pets.command.FeedPetCommand;
 import com.reactor.pets.command.PlayWithPetCommand;
 import com.reactor.pets.query.GetAllPetsQuery;
@@ -12,6 +11,7 @@ import com.reactor.pets.query.GetPetHistoryQuery;
 import com.reactor.pets.query.GetPetStatusQuery;
 import com.reactor.pets.query.PetEventDto;
 import com.reactor.pets.query.PetStatusView;
+import com.reactor.pets.service.PetCreationService;
 import com.reactor.pets.util.PetAsciiArt;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -46,31 +46,37 @@ public class PetController {
 
   private final CommandGateway commandGateway;
   private final QueryGateway queryGateway;
+  private final PetCreationService petCreationService;
 
   @PostMapping
-  @Operation(summary = "Create a new pet", description = "Creates a new virtual pet with the specified name and type")
+  @Operation(summary = "Create a new pet",
+      description = "Creates a new virtual pet with the specified name and type. "
+          + "First pet is FREE, subsequent pets cost XP (50, 100, 150, etc.)")
   @ApiResponses(value = {
     @ApiResponse(responseCode = "201", description = "Pet created successfully"),
-    @ApiResponse(responseCode = "400", description = "Invalid request")
+    @ApiResponse(responseCode = "400", description = "Invalid request or insufficient XP")
   })
   public CompletableFuture<ResponseEntity<PetStatusResponse>> createPet(
       @Valid @RequestBody CreatePetRequest request) {
     log.info("REST API: Creating pet - name: {}, type: {}", request.getName(), request.getType());
 
     String petId = UUID.randomUUID().toString();
-    CreatePetCommand command = new CreatePetCommand(petId, request.getName(), request.getType());
 
-    return commandGateway
-        .send(command)
+    return petCreationService
+        .createPetWithCost(petId, request.getName(), request.getType())
         .thenCompose(
-            result -> {
+            createdPetId -> {
               // Query the newly created pet to return its status
-              GetPetStatusQuery query = new GetPetStatusQuery(petId);
+              GetPetStatusQuery query = new GetPetStatusQuery(createdPetId);
               return queryGateway
                   .query(query, PetStatusView.class)
                   .thenApply(
                       view -> ResponseEntity.status(HttpStatus.CREATED).body(mapToResponse(view)));
-            });
+            })
+        .exceptionally(ex -> {
+          log.error("Failed to create pet", ex);
+          return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        });
   }
 
   @GetMapping

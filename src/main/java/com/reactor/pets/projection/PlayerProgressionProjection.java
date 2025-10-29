@@ -2,11 +2,13 @@ package com.reactor.pets.projection;
 
 import com.reactor.pets.event.PetCreatedForPlayerEvent;
 import com.reactor.pets.event.PlayerInitializedEvent;
+import com.reactor.pets.event.UpgradePurchasedEvent;
 import com.reactor.pets.event.XPEarnedEvent;
 import com.reactor.pets.event.XPSpentEvent;
 import com.reactor.pets.query.GetPlayerProgressionQuery;
 import com.reactor.pets.query.PlayerProgressionRepository;
 import com.reactor.pets.query.PlayerProgressionView;
+import java.util.HashSet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.config.ProcessingGroup;
@@ -34,6 +36,7 @@ public class PlayerProgressionProjection {
     view.setLifetimeXPEarned(event.getStartingXP());
     view.setTotalPetsCreated(0);
     view.setPrestigeLevel(0);
+    view.setPermanentUpgrades(new HashSet<>());
     view.setLastUpdated(event.getTimestamp());
 
     playerProgressionRepository.save(view);
@@ -99,6 +102,28 @@ public class PlayerProgressionProjection {
                   event.getTotalPetsCreated(),
                   event.getPetName(),
                   event.getPetType());
+            });
+  }
+
+  @EventHandler
+  @Transactional
+  public void on(UpgradePurchasedEvent event) {
+    log.debug("Processing UpgradePurchasedEvent for playerId: {}", event.getPlayerId());
+
+    playerProgressionRepository
+        .findById(event.getPlayerId())
+        .ifPresent(
+            view -> {
+              if (view.getPermanentUpgrades() == null) {
+                view.setPermanentUpgrades(new HashSet<>());
+              }
+              view.getPermanentUpgrades().add(event.getUpgradeType());
+              view.setLastUpdated(event.getTimestamp());
+              playerProgressionRepository.save(view);
+              log.info(
+                  "Player purchased upgrade: {}. Total upgrades: {}",
+                  event.getUpgradeType(),
+                  view.getPermanentUpgrades().size());
             });
   }
 
