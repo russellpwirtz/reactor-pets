@@ -63,8 +63,11 @@ public class StatisticsController {
   public ResponseEntity<LeaderboardResponse> getLeaderboard(
       @Parameter(description = "Leaderboard type (AGE, HAPPINESS, HEALTH)")
           @RequestParam(defaultValue = "AGE")
-          String type) {
-    log.info("REST API: Getting leaderboard for type: {}", type);
+          String type,
+      @Parameter(description = "Filter to show only alive pets")
+          @RequestParam(defaultValue = "false")
+          boolean aliveOnly) {
+    log.info("REST API: Getting leaderboard for type: {}, aliveOnly: {}", type, aliveOnly);
 
     GetLeaderboardQuery.LeaderboardType leaderboardType;
     try {
@@ -74,7 +77,7 @@ public class StatisticsController {
       leaderboardType = GetLeaderboardQuery.LeaderboardType.AGE;
     }
 
-    var pets = petManagerService.getLeaderboard(leaderboardType);
+    var pets = petManagerService.getLeaderboard(leaderboardType, aliveOnly);
 
     LeaderboardResponse response =
         LeaderboardResponse.builder()

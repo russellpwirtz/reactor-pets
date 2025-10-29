@@ -4,8 +4,15 @@ import { usePets } from '@/hooks/use-pets';
 import { PetCard } from './pet-card';
 import { CreatePetDialog } from './create-pet-dialog';
 
-export function PetsList() {
-  const { data: pets, isLoading, error } = usePets();
+interface PetsListProps {
+  aliveOnly?: boolean;
+}
+
+export function PetsList({ aliveOnly = false }: PetsListProps) {
+  const { data: allPets, isLoading, error } = usePets();
+
+  // Filter pets based on aliveOnly flag
+  const pets = aliveOnly ? allPets?.filter(pet => pet.alive) : allPets;
 
   if (isLoading) return <div>Loading pets...</div>;
   if (error) return <div>Error loading pets</div>;

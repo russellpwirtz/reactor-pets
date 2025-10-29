@@ -69,8 +69,21 @@ export const api = {
   // Statistics
   getStatistics: () => fetchApi<Statistics>('/statistics'),
 
-  getLeaderboard: (type: LeaderboardType = 'AGE') =>
-    fetchApi<LeaderboardEntry[]>(`/leaderboard?type=${type}`),
+  getLeaderboard: async (type: LeaderboardType = 'AGE', aliveOnly: boolean = false) => {
+    const response = await fetchApi<{ type: string; pets: Pet[]; totalCount: number }>(
+      `/leaderboard?type=${type}&aliveOnly=${aliveOnly}`
+    );
+
+    // Map full Pet objects to LeaderboardEntry with the relevant value
+    return response.pets.map((pet): LeaderboardEntry => ({
+      petId: pet.petId,
+      name: pet.name,
+      type: pet.type,
+      stage: pet.stage,
+      alive: pet.alive,
+      value: type === 'AGE' ? pet.age : type === 'HAPPINESS' ? pet.happiness : pet.health,
+    }));
+  },
 };
 
 export { ApiError };

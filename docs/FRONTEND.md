@@ -1,6 +1,8 @@
 # Reactor Pets - Frontend Application
 ## Next.js + TypeScript Implementation Plan
 
+**Current Status:** Phases 1-3 Complete ✅ | Next: Phase 4 (Real-time Updates & Polish)
+
 **Prerequisites:** This document assumes the backend REST API (Phase 6) is complete and running. The frontend will consume the API endpoints defined in `06_REST_API.md`.
 
 ---
@@ -51,368 +53,26 @@ reactor-pets-frontend/
 
 ---
 
-## Phase 1: Project Foundation & Setup ✅ COMPLETE
+## Completed Phases ✅
 
-**Status:** Completed
+### Phase 1: Project Foundation & Setup
+Next.js 15 project with TypeScript, Tailwind CSS, shadcn/ui, and React Query. Type-safe API client, environment configuration, and all core UI components installed.
 
-**Summary:** Next.js 15 project initialized with TypeScript, Tailwind CSS, and shadcn/ui. API client architecture established with type-safe fetch wrapper, React Query for data management, and complete TypeScript type definitions matching backend DTOs.
+**Location:** `/reactor-pets-frontend/`
 
-**Key Deliverables:**
-- Next.js 15 App Router with TypeScript configuration
-- React Query provider with 5s polling interval
-- Type-safe API client (`src/lib/api/client.ts`) for all backend endpoints
-- Complete TypeScript types for Pet, Statistics, and Leaderboard models
-- shadcn/ui components: Button, Card, Dialog, Input, Label, Select, Toast, Progress, Badge, Tabs
-- Environment configuration with `.env.local` and `src/lib/config.ts`
-- Root layout with QueryProvider and Toaster
-- All dependencies installed and TypeScript compiling without errors
+### Phase 2: Pet Management UI
+Full CRUD operations for pets with real-time polling updates. Pet list/detail views, interaction buttons (feed/play/clean), event history, and ASCII art display.
 
-**Project Location:** `/reactor-pets-frontend/`
+**Components:** `src/components/pets/*`, `src/hooks/use-pets.ts`
+**Pages:** `/pets`, `/pets/[id]`
 
----
+### Phase 3: Dashboard & Statistics
+Global statistics dashboard with quick actions, stats overview cards, stage distribution chart, and leaderboard with Age/Happiness/Health sorting. Navigation bar with active page highlighting. "Alive Only" toggle filter for both leaderboard and My Pets pages.
 
-## Phase 2: Pet Management UI ✅ COMPLETE
-
-**Status:** Completed
-
-**Summary:** Implemented full pet management system with CRUD operations, real-time polling updates, and interactive UI components. Users can create, view, and interact with pets through a responsive, color-coded interface.
-
-**Key Deliverables:**
-- **Custom React Query Hooks** (`src/hooks/use-pets.ts`)
-  - `usePets()`, `usePet()`, `useCreatePet()`, `useFeedPet()`, `usePlayWithPet()`, `useCleanPet()`, `usePetHistory()`
-  - Automatic query invalidation on mutations
-  - 5-second polling intervals for real-time updates
-
-- **Pet Components** (`src/components/pets/`)
-  - `create-pet-dialog.tsx` - Modal form with Zod validation for creating new pets
-  - `pet-card.tsx` - Grid card displaying pet stats with color-coded progress bars
-  - `pets-list.tsx` - Responsive grid layout (1/2/3 columns)
-  - `pet-detail-view.tsx` - Detailed pet information with ASCII art display
-  - `pet-history.tsx` - Event timeline showing pet interactions and changes
-  - `ascii-art-display.tsx` - Monospace container for ASCII art rendering
-
-- **Pages** (`src/app/pets/`)
-  - `/pets` - Pet list page with create button
-  - `/pets/[id]` - Pet detail page with tabbed interface (Overview/History)
-
-**Features Implemented:**
-- ✅ Create pets with name and type (Dog/Cat/Dragon)
-- ✅ View all pets in responsive grid
-- ✅ Real-time stat updates via React Query polling
-- ✅ Feed/Play/Clean interactions
-- ✅ Pet event history with formatted timestamps
-- ✅ Color-coded stat indicators (red/yellow/green)
-- ✅ Loading and error states
-- ✅ Toast notifications for success/error feedback
-
-**Technical Details:**
-- Form validation: React Hook Form + Zod
-- Date formatting: date-fns library
-- API responses unwrapped to match frontend types
-- Fixed field name mismatches (`alive` vs `isAlive`, `payload` vs `details`)
-- Next.js 15 async params handled with `use()` hook
-
----
-
-## Phase 3: Dashboard & Statistics
-
-**Goal:** Implement global statistics dashboard and leaderboard views.
-
-**Duration Estimate:** Single Claude Code session
-
-### Deliverables
-
-1. **Statistics Hooks**
-   ```typescript
-   // src/hooks/use-statistics.ts
-   export function useStatistics() {
-     return useQuery({
-       queryKey: ['statistics'],
-       queryFn: api.getStatistics,
-       refetchInterval: config.pollingInterval,
-     });
-   }
-
-   export function useLeaderboard(type: LeaderboardType = 'AGE') {
-     return useQuery({
-       queryKey: ['leaderboard', type],
-       queryFn: () => api.getLeaderboard(type),
-       refetchInterval: config.pollingInterval,
-     });
-   }
-   ```
-
-2. **Dashboard Page**
-   ```typescript
-   // src/app/page.tsx (home page)
-   import { StatsOverview } from '@/components/stats/stats-overview';
-   import { RecentPets } from '@/components/pets/recent-pets';
-   import { QuickActions } from '@/components/dashboard/quick-actions';
-
-   export default function HomePage() {
-     return (
-       <div className="container mx-auto py-8">
-         <h1 className="text-4xl font-bold mb-8">Dashboard</h1>
-
-         <div className="grid gap-6">
-           <QuickActions />
-           <StatsOverview />
-           <RecentPets />
-         </div>
-       </div>
-     );
-   }
-   ```
-
-3. **Stats Overview Component**
-   ```typescript
-   // src/components/stats/stats-overview.tsx
-   'use client';
-
-   import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-   import { useStatistics } from '@/hooks/use-statistics';
-
-   export function StatsOverview() {
-     const { data: stats, isLoading } = useStatistics();
-
-     if (isLoading) return <div>Loading statistics...</div>;
-     if (!stats) return null;
-
-     const statCards = [
-       {
-         title: 'Total Pets Created',
-         value: stats.totalPetsCreated,
-         icon: '🐾',
-       },
-       {
-         title: 'Currently Alive',
-         value: stats.currentlyAlive,
-         icon: '❤️',
-       },
-       {
-         title: 'Average Lifespan',
-         value: `${stats.averageLifespan.toFixed(1)} days`,
-         icon: '⏱️',
-       },
-       {
-         title: 'Longest Lived',
-         value: `${stats.longestLivedPetName} (${stats.longestLivedPetAge} days)`,
-         icon: '🏆',
-       },
-     ];
-
-     return (
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-         {statCards.map((stat) => (
-           <Card key={stat.title}>
-             <CardHeader className="flex flex-row items-center justify-between pb-2">
-               <CardTitle className="text-sm font-medium">
-                 {stat.title}
-               </CardTitle>
-               <span className="text-2xl">{stat.icon}</span>
-             </CardHeader>
-             <CardContent>
-               <div className="text-2xl font-bold">{stat.value}</div>
-             </CardContent>
-           </Card>
-         ))}
-       </div>
-     );
-   }
-   ```
-
-4. **Stage Distribution Chart**
-   ```typescript
-   // src/components/stats/stage-distribution.tsx
-   'use client';
-
-   import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-   import { useStatistics } from '@/hooks/use-statistics';
-   import { Progress } from '@/components/ui/progress';
-
-   export function StageDistribution() {
-     const { data: stats } = useStatistics();
-
-     if (!stats) return null;
-
-     const stages = [
-       { name: 'Egg', value: stats.stageDistribution.EGG, emoji: '🥚' },
-       { name: 'Baby', value: stats.stageDistribution.BABY, emoji: '👶' },
-       { name: 'Teen', value: stats.stageDistribution.TEEN, emoji: '🧒' },
-       { name: 'Adult', value: stats.stageDistribution.ADULT, emoji: '🦸' },
-     ];
-
-     const total = stages.reduce((sum, stage) => sum + stage.value, 0);
-
-     return (
-       <Card>
-         <CardHeader>
-           <CardTitle>Evolution Stage Distribution</CardTitle>
-         </CardHeader>
-         <CardContent className="space-y-4">
-           {stages.map((stage) => (
-             <div key={stage.name}>
-               <div className="flex items-center justify-between mb-2">
-                 <span className="text-sm font-medium">
-                   {stage.emoji} {stage.name}
-                 </span>
-                 <span className="text-sm text-muted-foreground">
-                   {stage.value} ({total > 0 ? ((stage.value / total) * 100).toFixed(0) : 0}%)
-                 </span>
-               </div>
-               <Progress value={total > 0 ? (stage.value / total) * 100 : 0} />
-             </div>
-           ))}
-         </CardContent>
-       </Card>
-     );
-   }
-   ```
-
-5. **Leaderboard Page**
-   ```typescript
-   // src/app/leaderboard/page.tsx
-   'use client';
-
-   import { useState } from 'react';
-   import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-   import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-   import { Badge } from '@/components/ui/badge';
-   import { useLeaderboard } from '@/hooks/use-statistics';
-   import type { LeaderboardType } from '@/lib/types/pet';
-
-   export default function LeaderboardPage() {
-     const [type, setType] = useState<LeaderboardType>('AGE');
-     const { data: entries, isLoading } = useLeaderboard(type);
-
-     const getRankEmoji = (index: number) => {
-       if (index === 0) return '🏆';
-       if (index === 1) return '🥈';
-       if (index === 2) return '🥉';
-       return `${index + 1}.`;
-     };
-
-     return (
-       <div className="container mx-auto py-8">
-         <h1 className="text-4xl font-bold mb-8">Leaderboard</h1>
-
-         <Tabs value={type} onValueChange={(v) => setType(v as LeaderboardType)}>
-           <TabsList className="grid w-full grid-cols-3">
-             <TabsTrigger value="AGE">Oldest</TabsTrigger>
-             <TabsTrigger value="HAPPINESS">Happiest</TabsTrigger>
-             <TabsTrigger value="HEALTH">Healthiest</TabsTrigger>
-           </TabsList>
-
-           <TabsContent value={type} className="mt-6">
-             <Card>
-               <CardHeader>
-                 <CardTitle>Top 10 Pets</CardTitle>
-               </CardHeader>
-               <CardContent>
-                 {isLoading ? (
-                   <div>Loading...</div>
-                 ) : (
-                   <div className="space-y-2">
-                     {entries?.map((entry, index) => (
-                       <div
-                         key={entry.petId}
-                         className="flex items-center justify-between p-3 rounded-lg border"
-                       >
-                         <div className="flex items-center gap-4">
-                           <span className="text-2xl w-8">
-                             {getRankEmoji(index)}
-                           </span>
-                           <div>
-                             <div className="font-semibold">{entry.name}</div>
-                             <div className="text-sm text-muted-foreground">
-                               {entry.type} - {entry.stage}
-                             </div>
-                           </div>
-                         </div>
-                         <div className="flex items-center gap-2">
-                           <Badge variant="outline">{entry.value}</Badge>
-                           {!entry.isAlive && (
-                             <Badge variant="secondary">Deceased</Badge>
-                           )}
-                         </div>
-                       </div>
-                     ))}
-                   </div>
-                 )}
-               </CardContent>
-             </Card>
-           </TabsContent>
-         </Tabs>
-       </div>
-     );
-   }
-   ```
-
-6. **Navigation Layout**
-   ```typescript
-   // src/components/layout/nav-bar.tsx
-   'use client';
-
-   import Link from 'next/link';
-   import { usePathname } from 'next/navigation';
-   import { cn } from '@/lib/utils';
-
-   const navItems = [
-     { href: '/', label: 'Dashboard' },
-     { href: '/pets', label: 'My Pets' },
-     { href: '/leaderboard', label: 'Leaderboard' },
-   ];
-
-   export function NavBar() {
-     const pathname = usePathname();
-
-     return (
-       <nav className="border-b">
-         <div className="container mx-auto px-4">
-           <div className="flex items-center justify-between h-16">
-             <Link href="/" className="text-xl font-bold">
-               Reactor Pets 🐾
-             </Link>
-
-             <div className="flex gap-6">
-               {navItems.map((item) => (
-                 <Link
-                   key={item.href}
-                   href={item.href}
-                   className={cn(
-                     'text-sm font-medium transition-colors hover:text-primary',
-                     pathname === item.href
-                       ? 'text-foreground'
-                       : 'text-muted-foreground'
-                   )}
-                 >
-                   {item.label}
-                 </Link>
-               ))}
-             </div>
-           </div>
-         </div>
-       </nav>
-     );
-   }
-   ```
-
-### Testing Checklist
-
-- [ ] Dashboard displays global statistics
-- [ ] Stage distribution shows percentages correctly
-- [ ] Leaderboard shows top 10 pets
-- [ ] Can switch between leaderboard types
-- [ ] Navigation between pages works
-- [ ] Stats update automatically via polling
-- [ ] Rank emojis display correctly
-
-### Technical Notes
-
-- Statistics automatically refresh every 5 seconds
-- Leaderboard supports three sorting types
-- Navigation highlights current page
-- Responsive design for mobile/tablet/desktop
+**Components:** `src/components/stats/*`, `src/components/layout/nav-bar.tsx`
+**Hooks:** `src/hooks/use-statistics.ts`
+**Pages:** `/` (dashboard), `/leaderboard`
+**Backend Enhancement:** Added `aliveOnly` parameter to leaderboard API
 
 ---
 
@@ -2221,14 +1881,15 @@ test('create new pet', async ({ page }) => {
 - [x] Add ASCII art display
 - [x] Test pet CRUD operations
 
-### Phase 3: Dashboard & Statistics
-- [ ] Create statistics hooks
-- [ ] Build dashboard page
-- [ ] Implement stats overview
-- [ ] Create stage distribution chart
-- [ ] Build leaderboard page
-- [ ] Add navigation bar
-- [ ] Test statistics display
+### Phase 3: Dashboard & Statistics ✅
+- [x] Create statistics hooks
+- [x] Build dashboard page
+- [x] Implement stats overview
+- [x] Create stage distribution chart
+- [x] Build leaderboard page
+- [x] Add navigation bar
+- [x] Add "Alive Only" toggle to leaderboard and My Pets
+- [x] Test statistics display
 
 ### Phase 4: Real-time & Polish
 - [ ] Add loading skeletons

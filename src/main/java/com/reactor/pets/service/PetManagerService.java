@@ -49,13 +49,14 @@ public class PetManagerService {
    * Get leaderboard of pets sorted by the specified metric.
    *
    * @param type The type of leaderboard (AGE, HAPPINESS, HEALTH)
+   * @param aliveOnly Whether to filter for only alive pets
    * @return Top 10 pets sorted by the specified metric
    */
-  public List<PetStatusView> getLeaderboard(GetLeaderboardQuery.LeaderboardType type) {
-    log.debug("Getting leaderboard for type: {}", type);
+  public List<PetStatusView> getLeaderboard(GetLeaderboardQuery.LeaderboardType type, boolean aliveOnly) {
+    log.debug("Getting leaderboard for type: {}, aliveOnly: {}", type, aliveOnly);
     return queryGateway
         .query(
-            new GetLeaderboardQuery(type), ResponseTypes.multipleInstancesOf(PetStatusView.class))
+            new GetLeaderboardQuery(type, aliveOnly), ResponseTypes.multipleInstancesOf(PetStatusView.class))
         .join();
   }
 
@@ -121,7 +122,7 @@ public class PetManagerService {
   public String getLeaderboardDisplay(GetLeaderboardQuery.LeaderboardType type) {
     log.debug("Generating leaderboard display for type: {}", type);
 
-    List<PetStatusView> topPets = getLeaderboard(type);
+    List<PetStatusView> topPets = getLeaderboard(type, true);
 
     StringBuilder sb = new StringBuilder();
     sb.append("\n");

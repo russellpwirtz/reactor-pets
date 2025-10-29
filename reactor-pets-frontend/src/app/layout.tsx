@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { QueryProvider } from '@/providers/query-provider';
 import { Toaster } from '@/components/ui/toaster';
+import { NavBar } from '@/components/layout/nav-bar';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -20,8 +21,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <QueryProvider>
-          {children}
-          <Toaster />
+          <div className="min-h-screen flex flex-col">
+            <NavBar />
+            <main className="flex-1">{children}</main>
+            <Toaster />
+          </div>
         </QueryProvider>
       </body>
     </html>

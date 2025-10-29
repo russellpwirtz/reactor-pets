@@ -121,9 +121,11 @@ public class PetStatisticsProjection {
 
   @QueryHandler
   public List<PetStatusView> handle(GetLeaderboardQuery query) {
-    log.debug("Handling GetLeaderboardQuery for type: {}", query.getType());
+    log.debug("Handling GetLeaderboardQuery for type: {}, aliveOnly: {}", query.getType(), query.isAliveOnly());
 
-    List<PetStatusView> allPets = petStatusRepository.findByIsAlive(true);
+    List<PetStatusView> allPets = query.isAliveOnly()
+        ? petStatusRepository.findByIsAlive(true)
+        : petStatusRepository.findAll();
 
     return switch (query.getType()) {
       case AGE -> allPets.stream()
