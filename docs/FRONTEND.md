@@ -71,420 +71,46 @@ reactor-pets-frontend/
 
 ---
 
-## Phase 2: Pet Management UI
+## Phase 2: Pet Management UI ✅ COMPLETE
 
-**Goal:** Implement core pet management features - create, view, and interact with pets.
+**Status:** Completed
 
-**Duration Estimate:** Single Claude Code session
+**Summary:** Implemented full pet management system with CRUD operations, real-time polling updates, and interactive UI components. Users can create, view, and interact with pets through a responsive, color-coded interface.
 
-### Deliverables
+**Key Deliverables:**
+- **Custom React Query Hooks** (`src/hooks/use-pets.ts`)
+  - `usePets()`, `usePet()`, `useCreatePet()`, `useFeedPet()`, `usePlayWithPet()`, `useCleanPet()`, `usePetHistory()`
+  - Automatic query invalidation on mutations
+  - 5-second polling intervals for real-time updates
 
-1. **Custom Hooks**
-   ```typescript
-   // src/hooks/use-pets.ts
-   import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-   import { api } from '@/lib/api/client';
-   import { config } from '@/lib/config';
+- **Pet Components** (`src/components/pets/`)
+  - `create-pet-dialog.tsx` - Modal form with Zod validation for creating new pets
+  - `pet-card.tsx` - Grid card displaying pet stats with color-coded progress bars
+  - `pets-list.tsx` - Responsive grid layout (1/2/3 columns)
+  - `pet-detail-view.tsx` - Detailed pet information with ASCII art display
+  - `pet-history.tsx` - Event timeline showing pet interactions and changes
+  - `ascii-art-display.tsx` - Monospace container for ASCII art rendering
 
-   export function usePets() {
-     return useQuery({
-       queryKey: ['pets'],
-       queryFn: api.getAllPets,
-       refetchInterval: config.pollingInterval,
-     });
-   }
+- **Pages** (`src/app/pets/`)
+  - `/pets` - Pet list page with create button
+  - `/pets/[id]` - Pet detail page with tabbed interface (Overview/History)
 
-   export function usePet(id: string) {
-     return useQuery({
-       queryKey: ['pet', id],
-       queryFn: () => api.getPet(id),
-       refetchInterval: config.pollingInterval,
-       enabled: !!id,
-     });
-   }
+**Features Implemented:**
+- ✅ Create pets with name and type (Dog/Cat/Dragon)
+- ✅ View all pets in responsive grid
+- ✅ Real-time stat updates via React Query polling
+- ✅ Feed/Play/Clean interactions
+- ✅ Pet event history with formatted timestamps
+- ✅ Color-coded stat indicators (red/yellow/green)
+- ✅ Loading and error states
+- ✅ Toast notifications for success/error feedback
 
-   export function useCreatePet() {
-     const queryClient = useQueryClient();
-
-     return useMutation({
-       mutationFn: api.createPet,
-       onSuccess: () => {
-         queryClient.invalidateQueries({ queryKey: ['pets'] });
-       },
-     });
-   }
-
-   export function useFeedPet() {
-     const queryClient = useQueryClient();
-
-     return useMutation({
-       mutationFn: (id: string) => api.feedPet(id),
-       onSuccess: (_, id) => {
-         queryClient.invalidateQueries({ queryKey: ['pet', id] });
-         queryClient.invalidateQueries({ queryKey: ['pets'] });
-       },
-     });
-   }
-
-   // Similar hooks for playWithPet, cleanPet
-   ```
-
-2. **Create Pet Dialog**
-   ```typescript
-   // src/components/pets/create-pet-dialog.tsx
-   'use client';
-
-   import { useState } from 'react';
-   import { useForm } from 'react-hook-form';
-   import { zodResolver } from '@hookform/resolvers/zod';
-   import * as z from 'zod';
-   import {
-     Dialog,
-     DialogContent,
-     DialogHeader,
-     DialogTitle,
-     DialogTrigger,
-   } from '@/components/ui/dialog';
-   import { Button } from '@/components/ui/button';
-   import { Input } from '@/components/ui/input';
-   import { Label } from '@/components/ui/label';
-   import {
-     Select,
-     SelectContent,
-     SelectItem,
-     SelectTrigger,
-     SelectValue,
-   } from '@/components/ui/select';
-   import { useCreatePet } from '@/hooks/use-pets';
-   import { toast } from '@/components/ui/use-toast';
-
-   const createPetSchema = z.object({
-     name: z.string().min(1, 'Name is required').max(50),
-     type: z.enum(['DOG', 'CAT', 'DRAGON']),
-   });
-
-   type CreatePetForm = z.infer<typeof createPetSchema>;
-
-   export function CreatePetDialog() {
-     const [open, setOpen] = useState(false);
-     const createPet = useCreatePet();
-
-     const form = useForm<CreatePetForm>({
-       resolver: zodResolver(createPetSchema),
-       defaultValues: { name: '', type: 'CAT' },
-     });
-
-     const onSubmit = async (data: CreatePetForm) => {
-       try {
-         await createPet.mutateAsync(data);
-         toast({ title: 'Pet created successfully!' });
-         setOpen(false);
-         form.reset();
-       } catch (error) {
-         toast({
-           title: 'Failed to create pet',
-           description: error.message,
-           variant: 'destructive',
-         });
-       }
-     };
-
-     return (
-       <Dialog open={open} onOpenChange={setOpen}>
-         <DialogTrigger asChild>
-           <Button size="lg">Create New Pet</Button>
-         </DialogTrigger>
-         <DialogContent>
-           <DialogHeader>
-             <DialogTitle>Create Your Virtual Pet</DialogTitle>
-           </DialogHeader>
-           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-             <div>
-               <Label htmlFor="name">Pet Name</Label>
-               <Input
-                 id="name"
-                 {...form.register('name')}
-                 placeholder="Enter a name..."
-               />
-               {form.formState.errors.name && (
-                 <p className="text-sm text-red-500">
-                   {form.formState.errors.name.message}
-                 </p>
-               )}
-             </div>
-
-             <div>
-               <Label htmlFor="type">Pet Type</Label>
-               <Select
-                 onValueChange={(value) => form.setValue('type', value as any)}
-                 defaultValue="CAT"
-               >
-                 <SelectTrigger>
-                   <SelectValue />
-                 </SelectTrigger>
-                 <SelectContent>
-                   <SelectItem value="DOG">Dog 🐶</SelectItem>
-                   <SelectItem value="CAT">Cat 🐱</SelectItem>
-                   <SelectItem value="DRAGON">Dragon 🐉</SelectItem>
-                 </SelectContent>
-               </Select>
-             </div>
-
-             <Button type="submit" className="w-full" disabled={createPet.isPending}>
-               {createPet.isPending ? 'Creating...' : 'Create Pet'}
-             </Button>
-           </form>
-         </DialogContent>
-       </Dialog>
-     );
-   }
-   ```
-
-3. **Pet Card Component**
-   ```typescript
-   // src/components/pets/pet-card.tsx
-   'use client';
-
-   import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-   import { Badge } from '@/components/ui/badge';
-   import { Progress } from '@/components/ui/progress';
-   import { Button } from '@/components/ui/button';
-   import { Pet } from '@/lib/types/pet';
-   import { useFeedPet, usePlayWithPet, useCleanPet } from '@/hooks/use-pets';
-   import { formatDistanceToNow } from 'date-fns';
-   import Link from 'next/link';
-
-   interface PetCardProps {
-     pet: Pet;
-   }
-
-   export function PetCard({ pet }: PetCardProps) {
-     const feedPet = useFeedPet();
-     const playWithPet = usePlayWithPet();
-     const cleanPet = useCleanPet();
-
-     const getStatColor = (value: number, inverted = false) => {
-       if (inverted) {
-         // For hunger (high is bad)
-         if (value > 70) return 'text-red-500';
-         if (value > 40) return 'text-yellow-500';
-         return 'text-green-500';
-       }
-       // For happiness/health (high is good)
-       if (value < 30) return 'text-red-500';
-       if (value < 60) return 'text-yellow-500';
-       return 'text-green-500';
-     };
-
-     return (
-       <Card className="hover:shadow-lg transition-shadow">
-         <CardHeader>
-           <div className="flex items-start justify-between">
-             <div>
-               <CardTitle className="text-xl">{pet.name}</CardTitle>
-               <div className="flex gap-2 mt-2">
-                 <Badge variant="outline">{pet.type}</Badge>
-                 <Badge variant="secondary">{pet.stage}</Badge>
-                 {!pet.isAlive && <Badge variant="destructive">Deceased</Badge>}
-               </div>
-             </div>
-             <Link href={`/pets/${pet.petId}`}>
-               <Button variant="ghost" size="sm">View Details</Button>
-             </Link>
-           </div>
-         </CardHeader>
-
-         <CardContent className="space-y-4">
-           {/* Stats */}
-           <div className="space-y-2">
-             <div>
-               <div className="flex justify-between text-sm mb-1">
-                 <span>Hunger</span>
-                 <span className={getStatColor(pet.hunger, true)}>
-                   {pet.hunger}/100
-                 </span>
-               </div>
-               <Progress value={pet.hunger} className="h-2" />
-             </div>
-
-             <div>
-               <div className="flex justify-between text-sm mb-1">
-                 <span>Happiness</span>
-                 <span className={getStatColor(pet.happiness)}>
-                   {pet.happiness}/100
-                 </span>
-               </div>
-               <Progress value={pet.happiness} className="h-2" />
-             </div>
-
-             <div>
-               <div className="flex justify-between text-sm mb-1">
-                 <span>Health</span>
-                 <span className={getStatColor(pet.health)}>
-                   {pet.health}/100
-                 </span>
-               </div>
-               <Progress value={pet.health} className="h-2" />
-             </div>
-           </div>
-
-           {/* Info */}
-           <div className="text-sm text-muted-foreground space-y-1">
-             <div>Age: {pet.age} days</div>
-             <div>Evolution: {pet.evolutionPath}</div>
-             <div>
-               Last updated: {formatDistanceToNow(new Date(pet.lastUpdated))} ago
-             </div>
-           </div>
-
-           {/* Actions */}
-           {pet.isAlive && (
-             <div className="flex gap-2">
-               <Button
-                 size="sm"
-                 onClick={() => feedPet.mutate(pet.petId)}
-                 disabled={feedPet.isPending}
-               >
-                 Feed
-               </Button>
-               <Button
-                 size="sm"
-                 variant="outline"
-                 onClick={() => playWithPet.mutate(pet.petId)}
-                 disabled={playWithPet.isPending}
-               >
-                 Play
-               </Button>
-               <Button
-                 size="sm"
-                 variant="outline"
-                 onClick={() => cleanPet.mutate(pet.petId)}
-                 disabled={cleanPet.isPending}
-               >
-                 Clean
-               </Button>
-             </div>
-           )}
-         </CardContent>
-       </Card>
-     );
-   }
-   ```
-
-4. **Pet List Page**
-   ```typescript
-   // src/app/pets/page.tsx
-   import { PetsList } from '@/components/pets/pets-list';
-   import { CreatePetDialog } from '@/components/pets/create-pet-dialog';
-
-   export default function PetsPage() {
-     return (
-       <div className="container mx-auto py-8">
-         <div className="flex items-center justify-between mb-8">
-           <h1 className="text-4xl font-bold">My Pets</h1>
-           <CreatePetDialog />
-         </div>
-         <PetsList />
-       </div>
-     );
-   }
-
-   // src/components/pets/pets-list.tsx
-   'use client';
-
-   export function PetsList() {
-     const { data: pets, isLoading, error } = usePets();
-
-     if (isLoading) return <div>Loading pets...</div>;
-     if (error) return <div>Error loading pets</div>;
-     if (!pets?.length) {
-       return (
-         <div className="text-center py-12">
-           <p className="text-muted-foreground mb-4">
-             You don't have any pets yet
-           </p>
-           <CreatePetDialog />
-         </div>
-       );
-     }
-
-     return (
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-         {pets.map((pet) => (
-           <PetCard key={pet.petId} pet={pet} />
-         ))}
-       </div>
-     );
-   }
-   ```
-
-5. **Pet Detail Page**
-   ```typescript
-   // src/app/pets/[id]/page.tsx
-   'use client';
-
-   import { usePet, usePetHistory } from '@/hooks/use-pets';
-   import { PetDetailView } from '@/components/pets/pet-detail-view';
-   import { PetHistory } from '@/components/pets/pet-history';
-   import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-   export default function PetDetailPage({ params }: { params: { id: string } }) {
-     const { data: pet, isLoading } = usePet(params.id);
-
-     if (isLoading) return <div>Loading...</div>;
-     if (!pet) return <div>Pet not found</div>;
-
-     return (
-       <div className="container mx-auto py-8">
-         <Tabs defaultValue="overview">
-           <TabsList>
-             <TabsTrigger value="overview">Overview</TabsTrigger>
-             <TabsTrigger value="history">History</TabsTrigger>
-           </TabsList>
-
-           <TabsContent value="overview">
-             <PetDetailView pet={pet} />
-           </TabsContent>
-
-           <TabsContent value="history">
-             <PetHistory petId={pet.petId} />
-           </TabsContent>
-         </Tabs>
-       </div>
-     );
-   }
-   ```
-
-6. **ASCII Art Display**
-   ```typescript
-   // src/components/pets/ascii-art-display.tsx
-   export function AsciiArtDisplay({ art }: { art: string }) {
-     return (
-       <pre className="font-mono text-xs bg-muted p-4 rounded-lg overflow-x-auto">
-         {art}
-       </pre>
-     );
-   }
-   ```
-
-### Testing Checklist
-
-- [ ] Can create new pets via dialog
-- [ ] Pet list displays all pets
-- [ ] Pet cards show current stats
-- [ ] Feed/Play/Clean actions work
-- [ ] Navigation to pet detail works
-- [ ] Stats update automatically (polling)
-- [ ] Error handling displays correctly
-- [ ] Loading states display properly
-
-### Technical Notes
-
-- React Query automatically refetches every 5 seconds
-- Form validation uses Zod schemas
-- shadcn/ui components provide consistent styling
-- Progress bars visually indicate stat levels
-- Color coding helps identify critical stats
+**Technical Details:**
+- Form validation: React Hook Form + Zod
+- Date formatting: date-fns library
+- API responses unwrapped to match frontend types
+- Fixed field name mismatches (`alive` vs `isAlive`, `payload` vs `details`)
+- Next.js 15 async params handled with `use()` hook
 
 ---
 
@@ -2576,24 +2202,24 @@ test('create new pet', async ({ page }) => {
 
 ## Implementation Checklist
 
-### Phase 1: Foundation
-- [ ] Initialize Next.js project
-- [ ] Install dependencies
-- [ ] Setup environment variables
-- [ ] Create API client
-- [ ] Setup React Query
-- [ ] Initialize shadcn/ui
-- [ ] Create root layout
-- [ ] Test API connection
+### Phase 1: Foundation ✅
+- [x] Initialize Next.js project
+- [x] Install dependencies
+- [x] Setup environment variables
+- [x] Create API client
+- [x] Setup React Query
+- [x] Initialize shadcn/ui
+- [x] Create root layout
+- [x] Test API connection
 
-### Phase 2: Pet Management
-- [ ] Create custom hooks for pets
-- [ ] Build create pet dialog
-- [ ] Implement pet card component
-- [ ] Build pet list page
-- [ ] Create pet detail page
-- [ ] Add ASCII art display
-- [ ] Test pet CRUD operations
+### Phase 2: Pet Management ✅
+- [x] Create custom hooks for pets
+- [x] Build create pet dialog
+- [x] Implement pet card component
+- [x] Build pet list page
+- [x] Create pet detail page
+- [x] Add ASCII art display
+- [x] Test pet CRUD operations
 
 ### Phase 3: Dashboard & Statistics
 - [ ] Create statistics hooks
@@ -2672,16 +2298,3 @@ test('create new pet', async ({ page }) => {
 
 ---
 
-## Conclusion
-
-This frontend implementation provides a complete, modern UI for the Reactor Pets application. The phased approach ensures:
-
-1. **Immediate Value:** Core pet management works from day 1
-2. **Future-Ready:** UI components prepared for all planned backend features
-3. **Maintainable:** TypeScript, React Query, and shadcn/ui provide solid foundation
-4. **Scalable:** Architecture supports adding new features easily
-5. **Professional:** Production-ready with error handling, loading states, and animations
-
-Each phase can be completed in a single Claude Code session, making the implementation manageable and iterative. The frontend is designed to work with the existing REST API and gracefully handle future backend additions.
-
-Ready to bring your pets to life on the web? Start with Phase 1! 🚀

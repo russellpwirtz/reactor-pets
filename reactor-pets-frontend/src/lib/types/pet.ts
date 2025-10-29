@@ -9,7 +9,7 @@ export interface Pet {
   type: PetType;
   stage: PetStage;
   evolutionPath: EvolutionPath;
-  isAlive: boolean;
+  alive: boolean;
   age: number;
   totalTicks: number;
   hunger: number;
@@ -42,11 +42,17 @@ export interface LeaderboardEntry {
   type: PetType;
   value: number;
   stage: PetStage;
-  isAlive: boolean;
+  alive: boolean;
 }
 
 export interface PetEvent {
   eventType: string;
   timestamp: string;
-  details: string;
+  payload: string;
+}
+
+export interface PetHistoryResponse {
+  petId: string;
+  events: PetEvent[];
+  totalEvents: number;
 }

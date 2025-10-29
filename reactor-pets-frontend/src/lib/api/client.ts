@@ -61,8 +61,10 @@ export const api = {
   cleanPet: (id: string) =>
     fetchApi<Pet>(`/pets/${id}/clean`, { method: 'POST' }),
 
-  getPetHistory: (id: string, limit = 10) =>
-    fetchApi<PetEvent[]>(`/pets/${id}/history?limit=${limit}`),
+  getPetHistory: async (id: string, limit = 10) => {
+    const response = await fetchApi<{ petId: string; events: PetEvent[]; totalEvents: number }>(`/pets/${id}/history?limit=${limit}`);
+    return response.events;
+  },
 
   // Statistics
   getStatistics: () => fetchApi<Statistics>('/statistics'),
