@@ -2,6 +2,7 @@
 
 import { usePets } from '@/hooks/use-pets';
 import { PetCard } from './pet-card';
+import { PetCardSkeleton } from './pet-card-skeleton';
 import { CreatePetDialog } from './create-pet-dialog';
 
 interface PetsListProps {
@@ -14,8 +15,23 @@ export function PetsList({ aliveOnly = false }: PetsListProps) {
   // Filter pets based on aliveOnly flag
   const pets = aliveOnly ? allPets?.filter(pet => pet.alive) : allPets;
 
-  if (isLoading) return <div>Loading pets...</div>;
-  if (error) return <div>Error loading pets</div>;
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3].map((i) => (
+          <PetCardSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12 text-red-500">
+        Error loading pets: {error instanceof Error ? error.message : 'Unknown error'}
+      </div>
+    );
+  }
   if (!pets?.length) {
     return (
       <div className="text-center py-12">

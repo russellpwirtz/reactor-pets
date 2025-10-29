@@ -47,10 +47,10 @@ export function CreatePetDialog() {
       toast({ title: 'Pet created successfully!' });
       setOpen(false);
       form.reset();
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: 'Failed to create pet',
-        description: error.message,
+        description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });
     }
@@ -83,7 +83,7 @@ export function CreatePetDialog() {
           <div>
             <Label htmlFor="type">Pet Type</Label>
             <Select
-              onValueChange={(value) => form.setValue('type', value as any)}
+              onValueChange={(value) => form.setValue('type', value as 'DOG' | 'CAT' | 'DRAGON')}
               defaultValue="CAT"
             >
               <SelectTrigger>

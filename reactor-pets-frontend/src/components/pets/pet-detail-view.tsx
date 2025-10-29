@@ -2,11 +2,13 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Pet } from '@/lib/types/pet';
 import { AsciiArtDisplay } from './ascii-art-display';
+import { AnimatedStatBar } from './animated-stat-bar';
 import { useFeedPet, usePlayWithPet, useCleanPet } from '@/hooks/use-pets';
+import { usePetNotifications } from '@/hooks/use-pet-notifications';
+import { motion } from 'framer-motion';
 
 interface PetDetailViewProps {
   pet: Pet;
@@ -17,19 +19,15 @@ export function PetDetailView({ pet }: PetDetailViewProps) {
   const playWithPet = usePlayWithPet();
   const cleanPet = useCleanPet();
 
-  const getStatColor = (value: number, inverted = false) => {
-    if (inverted) {
-      if (value > 70) return 'text-red-500';
-      if (value > 40) return 'text-yellow-500';
-      return 'text-green-500';
-    }
-    if (value < 30) return 'text-red-500';
-    if (value < 60) return 'text-yellow-500';
-    return 'text-green-500';
-  };
+  usePetNotifications(pet);
 
   return (
-    <Card>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <Card>
       <CardHeader>
         <div className="flex items-start justify-between">
           <CardTitle className="text-3xl">{pet.name}</CardTitle>
@@ -46,35 +44,9 @@ export function PetDetailView({ pet }: PetDetailViewProps) {
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Stats</h3>
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Hunger</span>
-                <span className={getStatColor(pet.hunger, true)}>
-                  {pet.hunger}/100
-                </span>
-              </div>
-              <Progress value={pet.hunger} className="h-2" />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Happiness</span>
-                <span className={getStatColor(pet.happiness)}>
-                  {pet.happiness}/100
-                </span>
-              </div>
-              <Progress value={pet.happiness} className="h-2" />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Health</span>
-                <span className={getStatColor(pet.health)}>
-                  {pet.health}/100
-                </span>
-              </div>
-              <Progress value={pet.health} className="h-2" />
-            </div>
+            <AnimatedStatBar label="Hunger" value={pet.hunger} inverted />
+            <AnimatedStatBar label="Happiness" value={pet.happiness} />
+            <AnimatedStatBar label="Health" value={pet.health} />
           </div>
 
           <div className="space-y-2 text-sm">
@@ -115,5 +87,6 @@ export function PetDetailView({ pet }: PetDetailViewProps) {
         )}
       </CardContent>
     </Card>
+    </motion.div>
   );
 }
