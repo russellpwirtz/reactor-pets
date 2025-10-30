@@ -8,16 +8,17 @@
 |-------|--------|-------|
 | **Phase 1: Core Model Extraction** | ✅ Complete | All models ported, zero violations |
 | **Phase 2: Rule Engine & Simulator** | ✅ Complete | Refactored architecture, zero violations |
-| **Phase 3: Pet Lifecycle Integration** | 🚧 In Progress | Next up |
-| **Phase 4: Test Coverage** | ⏳ Pending | - |
-| **Phase 5: Frontend Visualization** | ⏳ Pending | - |
-| **Phase 6: Polish & Optimization** | ⏳ Pending | - |
+| **Phase 3: Pet Lifecycle Integration** | ✅ Complete | SSE streaming endpoint, lifecycle saga |
+| **Phase 4: Test Coverage** | 🚧 Next Up | Backend testing |
+| **Phase 5: Frontend Visualization** | ⏳ Pending | 3D brain viewer |
+| **Phase 6: Polish & Optimization** | ⏳ Pending | Performance tuning |
 
 **Code Quality**:
 - ✅ Zero checkstyle violations
 - ✅ Zero SpotBugs issues
+- ✅ 252 tests passing (0 failures)
 - ✅ Clean architecture with phase-specific handlers
-- ✅ All acceptance criteria met for Phases 1-2
+- ✅ All acceptance criteria met for Phases 1-3
 
 ## Overview
 
@@ -77,10 +78,11 @@ This implementation adds a 3D neural visualization to each pet that reflects its
 **Key Features**:
 - ✅ Pet hunger/happiness/health drive neural firing patterns
 - ✅ Grid complexity scales with evolution stage (20x20 → 100x100)
-- ✅ Simulations start ONLY when WebSocket clients connect
+- ✅ Simulations start ONLY when SSE/WebSocket clients connect
 - ✅ 30-second grace period before stopping (smooth page refreshes)
 - ✅ Parameters cached and updated every 5 seconds (whether running or not)
 - ✅ Multiple concurrent brains supported with individual subscriber tracking
+- ✅ Server-Sent Events (SSE) for efficient one-way streaming
 
 **Architecture Flow**:
 ```
@@ -94,8 +96,8 @@ This implementation adds a 3D neural visualization to each pet that reflects its
 │      │                                                           │
 │      ↓                                                           │
 │ ┌──────────────────────────────────────────────────────┐        │
-│ │ WebSocket Subscribe Event                            │        │
-│ │  - Client connects to /pets/{petId}/brain            │        │
+│ │ SSE/WebSocket Subscribe Event                        │        │
+│ │  - Client connects to /pets/{petId}/brain/stream     │        │
 │ │  - Grid initialized (if first subscriber)            │        │
 │ │  - Simulation STARTED                                │        │
 │ │  - Subscriber count: 0 → 1                           │        │
@@ -107,7 +109,7 @@ This implementation adds a 3D neural visualization to each pet that reflects its
 │      │                                                           │
 │      ↓                                                           │
 │ ┌──────────────────────────────────────────────────────┐        │
-│ │ WebSocket Unsubscribe Event                          │        │
+│ │ SSE/WebSocket Unsubscribe Event                      │        │
 │ │  - Client disconnects                                │        │
 │ │  - Subscriber count: 1 → 0                           │        │
 │ │  - Schedule shutdown in 30s                          │        │
@@ -228,6 +230,7 @@ src/main/java/com/reactor/pets/brain/service/
 
 ## Phase 2: Rule Engine and Simulation Service ✅ COMPLETED
 
+**Completed**: 2025-10-30
 **Goal**: Port RuleEngine and create PetBrainSimulator service
 
 ### Files Created
@@ -286,194 +289,78 @@ brain:
 
 ---
 
-## Phase 3: Integration with Pet Lifecycle (Backend Integration)
+## Phase 3: Integration with Pet Lifecycle ✅ COMPLETED
 
-**Estimated Time**: 2-3 hours
+**Completed**: 2025-10-30
 **Goal**: Wire brain simulation into pet lifecycle events
 
-### Tasks
+### Summary
 
-1. **Create `BrainLifecycleSaga.java`**:
-   - Listen to pet events and manage brain lifecycle
-   - Handle: `PetCreatedEvent`, `TimePassedEvent`, `PetEvolvedEvent`, `PetDiedEvent`
+Successfully integrated brain simulation lifecycle management with pet events and created streaming endpoint for real-time brain activity visualization.
 
-   ```java
-   package com.reactor.pets.saga;
-
-   import com.reactor.pets.aggregate.EvolutionPath;
-   import com.reactor.pets.aggregate.PetStage;
-   import com.reactor.pets.brain.service.PetBrainSimulator;
-   import com.reactor.pets.event.PetCreatedEvent;
-   import com.reactor.pets.event.PetDiedEvent;
-   import com.reactor.pets.event.PetEvolvedEvent;
-   import com.reactor.pets.event.TimePassedEvent;
-   import com.reactor.pets.query.GetPetStatusQuery;
-   import com.reactor.pets.query.PetStatusRepository;
-   import lombok.extern.slf4j.Slf4j;
-   import org.axonframework.eventhandling.EventHandler;
-   import org.axonframework.queryhandling.QueryGateway;
-   import org.springframework.stereotype.Component;
-
-   import java.util.concurrent.CompletableFuture;
-   import java.util.concurrent.Executors;
-   import java.util.concurrent.ScheduledExecutorService;
-   import java.util.concurrent.TimeUnit;
-
-   @Slf4j
-   @Component
-   public class BrainLifecycleSaga {
-
-       private final PetBrainSimulator brainSimulator;
-       private final QueryGateway queryGateway;
-       private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
-
-       public BrainLifecycleSaga(
-               PetBrainSimulator brainSimulator,
-               QueryGateway queryGateway) {
-           this.brainSimulator = brainSimulator;
-           this.queryGateway = queryGateway;
-       }
-
-       @EventHandler
-       public void on(PetCreatedEvent event) {
-           log.info("Pet created: {} - brain will initialize on first client connection", event.getPetId());
-
-           // Schedule periodic updates every 5 seconds
-           // This updates CACHED parameters even if simulation isn't running
-           scheduler.scheduleAtFixedRate(
-               () -> updateBrainFromPetState(event.getPetId()),
-               5, 5, TimeUnit.SECONDS
-           );
-       }
-
-       @EventHandler
-       public void on(PetEvolvedEvent event) {
-           log.info("Pet {} evolved to {}, updating brain", event.getPetId(), event.getNewStage());
-
-           // Force immediate update on evolution
-           updateBrainFromPetState(event.getPetId());
-       }
-
-       @EventHandler
-       public void on(PetDiedEvent event) {
-           log.info("Pet {} died, stopping brain", event.getPetId());
-           brainSimulator.stopBrain(event.getPetId());
-       }
-
-       private void updateBrainFromPetState(String petId) {
-           // Query current pet status
-           queryGateway.query(
-               new GetPetStatusQuery(petId),
-               com.reactor.pets.query.PetStatusRepository.PetStatus.class
-           ).thenAccept(status -> {
-               if (status != null && status.isAlive()) {
-                   brainSimulator.updatePetState(
-                       petId,
-                       status.getHunger(),
-                       status.getHappiness(),
-                       status.getHealth(),
-                       status.getStage(),
-                       status.getEvolutionPath()
-                   );
-               }
-           }).exceptionally(ex -> {
-               log.error("Failed to update brain for pet {}", petId, ex);
-               return null;
-           });
-       }
-   }
-   ```
-
-2. **Create WebSocket endpoint for brain streaming**:
-   - Create `BrainWebSocketController.java`
-
-   ```java
-   package com.reactor.pets.api.controller;
-
-   import com.reactor.pets.brain.model.CellState;
-   import com.reactor.pets.brain.service.PetBrainSimulator;
-   import com.reactor.pets.query.GetPetStatusQuery;
-   import com.reactor.pets.query.PetStatusRepository;
-   import lombok.extern.slf4j.Slf4j;
-   import org.axonframework.queryhandling.QueryGateway;
-   import org.springframework.messaging.handler.annotation.DestinationVariable;
-   import org.springframework.messaging.handler.annotation.MessageMapping;
-   import org.springframework.stereotype.Controller;
-   import reactor.core.publisher.Flux;
-   import reactor.core.publisher.Mono;
-
-   import java.util.List;
-
-   @Slf4j
-   @Controller
-   public class BrainWebSocketController {
-
-       private final PetBrainSimulator brainSimulator;
-       private final QueryGateway queryGateway;
-
-       public BrainWebSocketController(
-               PetBrainSimulator brainSimulator,
-               QueryGateway queryGateway) {
-           this.brainSimulator = brainSimulator;
-           this.queryGateway = queryGateway;
-       }
-
-       @MessageMapping("/pets/{petId}/brain")
-       public Flux<List<CellState>> streamBrainActivity(@DestinationVariable String petId) {
-           log.info("Client subscribed to brain stream for pet: {}", petId);
-
-           // Query pet status to get current state
-           return Mono.fromFuture(
-               queryGateway.query(
-                   new GetPetStatusQuery(petId),
-                   PetStatusRepository.PetStatus.class
-               )
-           ).flatMapMany(status -> {
-               if (status == null || !status.isAlive()) {
-                   log.warn("Cannot stream brain for pet {} - not found or dead", petId);
-                   return Flux.empty();
-               }
-
-               // Subscribe to brain with current pet state
-               // This will start simulation if needed and track subscriber count
-               return brainSimulator.subscribeToBrain(
-                   petId,
-                   status.getHunger(),
-                   status.getHappiness(),
-                   status.getHealth(),
-                   status.getStage(),
-                   status.getEvolutionPath()
-               );
-           });
-       }
-   }
-   ```
-
-3. **Update POM dependencies** (if needed):
-   - Ensure WebSocket and Reactor dependencies are present
-   - Verify Lombok is available
-
-### Acceptance Criteria
-
-- [ ] Brain does NOT initialize automatically when pet is created
-- [ ] Brain initializes ONLY when first WebSocket client connects
-- [ ] Brain parameters update every 5 seconds (cached if not running, applied if running)
-- [ ] Brain simulation starts when first client subscribes
-- [ ] Subscriber count tracks concurrent viewers
-- [ ] Brain simulation stops 30 seconds after last client disconnects
-- [ ] Brain grid remains in memory during grace period for quick restart
-- [ ] Brain simulation updates on evolution stage transitions (if running)
-- [ ] Brain stops and clears when pet dies
-- [ ] WebSocket endpoint streams cell updates
-- [ ] Multiple concurrent pet brains work correctly
-- [ ] Logs clearly show when simulations START, STOP, and parameter updates
-
-### Files to Create
-
+**Files Created**:
 ```
 src/main/java/com/reactor/pets/saga/BrainLifecycleSaga.java
-src/main/java/com/reactor/pets/api/controller/BrainWebSocketController.java
+src/main/java/com/reactor/pets/api/controller/BrainStreamController.java
 ```
+
+**Files Modified**:
+```
+pom.xml (added spring-boot-starter-webflux dependency)
+```
+
+### Key Features Implemented
+
+**BrainLifecycleSaga**:
+- Listens to `PetCreatedEvent`, `PetEvolvedEvent`, `PetDiedEvent`
+- Schedules periodic parameter updates every 5 seconds (cached when simulation not running)
+- Forces immediate updates on evolution events
+- Cleans up scheduled tasks and simulations when pet dies
+- Uses `ConcurrentHashMap` to track scheduled tasks per pet
+
+**BrainStreamController**:
+- REST endpoint for Server-Sent Events (SSE): `GET /api/pets/{petId}/brain/stream`
+- Validates pet exists and is alive before streaming
+- Calls `PetBrainSimulator.subscribeToBrain()` which starts simulation on first connection
+- Returns reactive `Flux<ServerSentEvent<List<CellState>>>`
+- Debug endpoint: `GET /api/pets/{petId}/brain/status`
+
+**Implementation Note**: We chose Server-Sent Events (SSE) over WebSocket because:
+- Brain streaming is **one-way** (server → client), making SSE ideal
+- SSE works over standard HTTP (simpler infrastructure, easier debugging)
+- Native browser support via `EventSource` API
+- Automatic reconnection handling built-in
+- Works seamlessly with Spring WebFlux reactive streams
+
+### Quality Metrics
+- ✅ Zero checkstyle violations
+- ✅ Zero SpotBugs issues
+- ✅ All 252 tests passing
+- ✅ All acceptance criteria met
+
+### Acceptance Criteria (All Met)
+
+- ✅ Brain does NOT initialize automatically when pet is created
+- ✅ Brain initializes ONLY when first SSE client connects
+- ✅ Brain parameters update every 5 seconds (cached if not running, applied if running)
+- ✅ Brain simulation starts when first client subscribes
+- ✅ Subscriber count tracks concurrent viewers (managed in PetBrainSimulator)
+- ✅ Brain simulation stops 30 seconds after last client disconnects
+- ✅ Brain grid remains in memory during grace period for quick restart
+- ✅ Brain simulation updates on evolution stage transitions (if running)
+- ✅ Brain stops and clears when pet dies
+- ✅ SSE endpoint streams cell updates in batches (50ms intervals)
+- ✅ Multiple concurrent pet brains work correctly
+- ✅ Logs clearly show when simulations START, STOP, and parameter updates
+
+### Testing the Stream
+
+To test the SSE stream:
+1. Start the application
+2. Create a pet: `POST /api/pets`
+3. Connect to stream: `GET http://localhost:8080/api/pets/{petId}/brain/stream`
+4. You'll see continuous `data:` events with cell state batches
+5. Simulation starts on connection, stops 30s after disconnect
 
 ---
 
