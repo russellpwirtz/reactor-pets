@@ -51,7 +51,8 @@ public class PlayerProgressionController {
             0L,
             1.0,
             1.0,
-            0L));
+            0L,
+            java.util.Collections.emptySet()));
       }
 
       // Calculate current highest XP multiplier from alive pets
@@ -73,7 +74,8 @@ public class PlayerProgressionController {
           progression.getLifetimeXPEarned(),
           currentMultiplier,
           highestMultiplier,
-          totalXPSpent));
+          totalXPSpent,
+          progression.getPermanentUpgrades()));
     }).exceptionally(ex -> {
       log.error("Error fetching player progression", ex);
       return ResponseEntity.internalServerError().build();

@@ -88,8 +88,13 @@ public class PlayerInitializationService {
         commandGateway.sendAndWait(new InitializePlayerCommand(PLAYER_ID, STARTING_XP));
         log.info("Player initialized successfully!");
       } catch (Exception e) {
-        log.error("Failed to initialize player", e);
-        throw new RuntimeException("Failed to initialize player", e);
+        // Check if this is a duplicate aggregate error (aggregate already exists)
+        if (e.getMessage() != null && e.getMessage().contains("Invalid sequence number 0")) {
+          log.info("Player aggregate already exists in event store. Skipping initialization.");
+        } else {
+          log.error("Failed to initialize player", e);
+          throw new RuntimeException("Failed to initialize player", e);
+        }
       }
     }
 
@@ -104,8 +109,13 @@ public class PlayerInitializationService {
         commandGateway.sendAndWait(new InitializeInventoryCommand(INVENTORY_ID, starterItems));
         log.info("Inventory initialized successfully!");
       } catch (Exception e) {
-        log.error("Failed to initialize inventory", e);
-        throw new RuntimeException("Failed to initialize inventory", e);
+        // Check if this is a duplicate aggregate error (aggregate already exists)
+        if (e.getMessage() != null && e.getMessage().contains("Invalid sequence number 0")) {
+          log.info("Inventory aggregate already exists in event store. Skipping initialization.");
+        } else {
+          log.error("Failed to initialize inventory", e);
+          throw new RuntimeException("Failed to initialize inventory", e);
+        }
       }
     }
 

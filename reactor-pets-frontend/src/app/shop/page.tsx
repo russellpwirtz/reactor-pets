@@ -58,6 +58,7 @@ export default function ShopPage() {
             currentXP={progression?.currentXP || 0}
             onPurchase={handlePurchaseUpgrade}
             isLoading={upgradesLoading}
+            purchasedUpgrades={progression?.permanentUpgrades || []}
           />
         </TabsContent>
       </Tabs>

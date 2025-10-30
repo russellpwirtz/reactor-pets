@@ -103,7 +103,7 @@ export const api = {
   getProgression: () => fetchApi<PlayerProgression>('/progression'),
 
   // Shop
-  getShopItems: () => fetchApi<ShopItem[]>('/shop/items'),
+  getShopItems: () => fetchApi<ShopItem[]>('/shop/equipment'),
   getShopUpgrades: () => fetchApi<ShopItem[]>('/shop/upgrades'),
   purchaseEquipment: (equipmentType: string) =>
     fetchApi<void>(`/shop/purchase/equipment/${equipmentType}`, { method: 'POST' }),

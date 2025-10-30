@@ -32,12 +32,6 @@
         <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
     </Match>
 
-    <!-- Exclude CommandLineRunner implementations -->
-    <Match>
-        <Class name="~.*CliRunner"/>
-        <Bug pattern="DM_DEFAULT_ENCODING"/>
-    </Match>
-
     <!-- Allow non-localized String case conversions -->
     <Match>
         <Bug pattern="DM_CONVERT_CASE"/>

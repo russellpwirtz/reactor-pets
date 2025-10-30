@@ -17,6 +17,7 @@ export interface Pet {
   health: number;
   lastUpdated: string;
   asciiArt: string;
+  maxEquipmentSlots: number;
 }
 
 export interface CreatePetRequest {

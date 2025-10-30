@@ -21,7 +21,7 @@ export interface EquipmentModifiers {
 
 export interface EquipmentItem {
   itemId: string;
-  equipmentType: EquipmentType;
+  name: string;
   slot: EquipmentSlot;
   modifiers: EquipmentModifiers;
 }

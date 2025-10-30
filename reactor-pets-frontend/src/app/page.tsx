@@ -9,6 +9,8 @@ import { usePets } from '@/hooks/use-pets';
 import { Badge } from '@/components/ui/badge';
 import { XPCard } from '@/components/progression/xp-card';
 import { useProgression } from '@/hooks/use-progression';
+import { PermanentUpgradesCard } from '@/components/progression/permanent-upgrades-card';
+import { InventoryCard } from '@/components/equipment/inventory-card';
 
 export default function HomePage() {
   const { data: pets, isLoading } = usePets();
@@ -46,6 +48,12 @@ export default function HomePage() {
 
         {/* Player Progression */}
         {progression && <XPCard {...progression} />}
+
+        {/* Permanent Upgrades and Inventory */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {progression && <PermanentUpgradesCard upgrades={progression.permanentUpgrades} />}
+          <InventoryCard />
+        </div>
 
         {/* Global Statistics */}
         <div>

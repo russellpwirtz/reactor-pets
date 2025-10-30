@@ -90,9 +90,10 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
         </TabsContent>
 
         <TabsContent value="equipment" className="mt-6">
-          {equipment && (
+          {equipment && pet && (
             <>
               <EquipmentSlots
+                pet={pet}
                 {...equipment}
                 onEquip={handleEquipClick}
                 onUnequip={handleUnequip}

@@ -65,9 +65,9 @@ export function EquipmentInventoryDialog({
                 className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
               >
                 <div className="flex items-center gap-3 flex-1">
-                  <span className="text-2xl">{itemIcons[item.equipmentType] || '📦'}</span>
+                  <span className="text-2xl">{itemIcons[item.name] || '📦'}</span>
                   <div>
-                    <p className="font-medium">{item.equipmentType.replace(/_/g, ' ')}</p>
+                    <p className="font-medium">{item.name.replace(/_/g, ' ')}</p>
                     <div className="flex gap-1 mt-1 flex-wrap">
                       {Object.entries(item.modifiers).map(([key, value]) => (
                         <Badge key={key} variant="outline" className="text-xs">

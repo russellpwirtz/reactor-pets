@@ -32,7 +32,6 @@ A virtual pet application built with Axon Framework 4.x and Project Reactor, dem
 - **CORS configuration for frontend development** (NEW - Phase 6)
 - JPA persistence with H2 database for projections
 - Event history queries via EventStore
-- Interactive CLI and REST API (dual interface)
 - **117 passing tests** with comprehensive coverage
 
 ## Prerequisites
@@ -57,7 +56,7 @@ Verify Axon Server is running at http://localhost:8024 (GUI) and localhost:8124 
 # Build
 mvn clean package -DskipTests
 
-# Run the CLI application
+# Run the application
 mvn spring-boot:run
 ```
 
@@ -84,22 +83,6 @@ mvn clean verify
 ```
 
 ## Interfaces
-
-### CLI Commands
-
-```
-create <name> <type>      - Create a new pet (DOG, CAT, DRAGON)
-feed <petId>              - Feed your pet
-play <petId>              - Play with your pet
-clean <petId>             - Clean your pet
-status <petId>            - Display current pet status (shows stage, stats, ASCII art)
-list                      - List all alive pets
-dashboard                 - Show global statistics and all alive pets
-leaderboard [type]        - Show top 10 pets (AGE, HAPPINESS, HEALTH - default: AGE)
-history <petId> [limit]   - Show event history
-help                      - Show help
-exit                      - Exit
-```
 
 ### REST API Endpoints
 
@@ -158,12 +141,6 @@ See `docs/01_DESIGN.md` for phase roadmap and future features.
 - **Axon Framework** - Aggregates, commands, events, sagas, projections
 - **Project Reactor** - Reactive programming with Flux/Mono
 - **Domain-Driven Design** - Bounded contexts, aggregates, domain events
-
-## Troubleshooting
-
-- **Connection warnings:** `NOT_FOUND: [AXONIQ-1302]` warnings are harmless
-- **CLI not responding:** Run the JAR directly in interactive terminal
-- **Tests hanging:** TimeTickScheduler tests require AxonServer for proper async processing
 
 ## Next Steps
 

@@ -248,7 +248,6 @@
         <version>${jacoco.version}</version>
         <configuration>
           <excludes>
-            <exclude>**/PetCliRunner.class</exclude>
             <exclude>**/ReactorPetsApplication.class</exclude>
             <exclude>**/query/*.class</exclude>
             <exclude>**/scheduler/*.class</exclude>

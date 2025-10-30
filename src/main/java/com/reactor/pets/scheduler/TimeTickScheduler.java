@@ -2,8 +2,8 @@ package com.reactor.pets.scheduler;
 
 import com.reactor.pets.command.TimeTickCommand;
 import com.reactor.pets.query.GetAlivePetsQuery;
+import com.reactor.pets.query.GetAllPetsQuery;
 import com.reactor.pets.query.PetStatusView;
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.time.Duration;
 import java.util.List;
@@ -13,7 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Profile;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
@@ -30,16 +32,23 @@ public class TimeTickScheduler {
   private final AtomicLong tickCounter = new AtomicLong(0);
   private Disposable subscription;
 
-  @PostConstruct
+  @EventListener(ApplicationReadyEvent.class)
   public void startTimeFlow() {
     log.info("Starting reactive time flow scheduler (tick every 10 seconds)");
+
+    // Initialize tick counter from existing pets to handle restarts
+    // This now runs after all Axon handlers are registered
+    initializeTickCounter();
 
     subscription =
         Flux.interval(Duration.ofSeconds(10), Duration.ofSeconds(10))
             .doOnNext(
                 tick -> {
-                  long currentTick = tickCounter.get();
-                  log.debug("Time tick #{} triggered", currentTick);
+                  // Increment tick counter once per cycle for all pets
+                  long currentTick = tickCounter.incrementAndGet();
+                  log.info(
+                      "*** Time tick #{} triggered (previous tick was #{})",
+                      currentTick, currentTick - 1);
                 })
             .flatMap(tick -> queryForAlivePets())
             .flatMap(
@@ -83,12 +92,24 @@ public class TimeTickScheduler {
   }
 
   private Mono<String> sendTimeTick(PetStatusView pet) {
-    long currentTick = tickCounter.incrementAndGet();
+    // Use the current tick value (already incremented once per cycle)
+    long currentTick = tickCounter.get();
     TimeTickCommand command = new TimeTickCommand(pet.getPetId(), currentTick);
+
+    log.info(
+        "*** Sending tick #{} to pet: {} (name: {}, lastTick: {})",
+        currentTick,
+        pet.getPetId(),
+        pet.getName(),
+        pet.getTotalTicks());
 
     return Mono.fromFuture(commandGateway.send(command))
         .thenReturn(pet.getPetId())
-        .doOnSuccess(petId -> log.trace("Time tick #{} sent to pet: {}", currentTick, petId))
+        .doOnSuccess(
+            petId ->
+                log.info(
+                    "*** Time tick #{} successfully sent to pet: {} ({})",
+                    currentTick, petId, pet.getName()))
         .onErrorResume(
             error -> {
               if (error.getMessage() != null
@@ -102,10 +123,36 @@ public class TimeTickScheduler {
               }
               // For other errors, log and propagate
               log.error(
-                  "Failed to send time tick to pet {}: {}",
+                  "Failed to send time tick #{} to pet {}: {}",
+                  currentTick,
                   pet.getPetId(),
                   error.getMessage());
               return Mono.error(error);
             });
+  }
+
+  private void initializeTickCounter() {
+    try {
+      log.info("*** Attempting to initialize tick counter from existing pets...");
+      List<PetStatusView> allPets =
+          queryGateway
+              .query(
+                  new GetAllPetsQuery(),
+                  ResponseTypes.multipleInstancesOf(PetStatusView.class))
+              .join();
+
+      log.info("*** Found {} pets total", allPets.size());
+
+      long maxTicks =
+          allPets.stream()
+              .mapToLong(PetStatusView::getTotalTicks)
+              .max()
+              .orElse(0L);
+
+      tickCounter.set(maxTicks);
+      log.info("*** Initialized tick counter to {} based on existing pets", maxTicks);
+    } catch (Exception e) {
+      log.warn("*** Failed to initialize tick counter from existing pets, starting from 0", e);
+    }
   }
 }

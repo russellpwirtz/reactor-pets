@@ -333,15 +333,34 @@ public class Pet {
 
   @CommandHandler
   public void handle(TimeTickCommand command) {
+    System.out.println(
+        "*** TimeTickCommand received for pet: "
+            + command.getPetId()
+            + ", tick: "
+            + command.getTickCount()
+            + ", alive: "
+            + isAlive
+            + ", lastTick: "
+            + lastTickSequence);
+
     // Ignore if pet is dead
     if (!isAlive) {
+      System.out.println("*** Pet is dead, ignoring tick");
       return; // No-op for dead pets
     }
 
     // Idempotency check: ignore if we've already processed this tick
     if (command.getTickCount() <= lastTickSequence) {
+      System.out.println(
+          "*** Duplicate tick detected, ignoring (tick: "
+              + command.getTickCount()
+              + " <= lastTick: "
+              + lastTickSequence
+              + ")");
       return;
     }
+
+    System.out.println("*** Processing tick for pet: " + command.getPetId());
 
     // Calculate stat changes based on stage and evolution path
     int baseHungerIncrease = 3;

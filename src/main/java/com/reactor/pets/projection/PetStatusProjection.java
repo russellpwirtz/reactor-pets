@@ -174,7 +174,7 @@ public class PetStatusProjection {
   @EventHandler
   @Transactional
   public void on(TimePassedEvent event) {
-    log.debug("Processing TimePassedEvent for petId: {}", event.getPetId());
+    log.info("*** PROCESSING TimePassedEvent for petId: {}, hunger increase: {}", event.getPetId(), event.getHungerIncrease());
 
     petStatusRepository
         .findById(event.getPetId())
@@ -189,8 +189,8 @@ public class PetStatusProjection {
               view.setXpMultiplier(event.getNewXpMultiplier());
               view.setLastUpdated(event.getTimestamp());
               petStatusRepository.save(view);
-              log.debug(
-                  "Time passed for pet {}. Age: {}, Ticks: {}, Hunger: {}, Happiness: {}",
+              log.info(
+                  "*** Time passed for pet {}. Age: {}, Ticks: {}, Hunger: {}, Happiness: {}",
                   view.getName(),
                   view.getAge(),
                   view.getTotalTicks(),

@@ -11,6 +11,7 @@ interface ShopGridProps {
   currentXP: number;
   onPurchase: (itemType: string) => void;
   isLoading?: boolean;
+  purchasedUpgrades?: string[];
 }
 
 const itemIcons: Record<string, string> = {
@@ -45,7 +46,7 @@ const itemIcons: Record<string, string> = {
   PREMIUM_TOY: '🧸',
 };
 
-export function ShopGrid({ items, currentXP, onPurchase, isLoading }: ShopGridProps) {
+export function ShopGrid({ items, currentXP, onPurchase, isLoading, purchasedUpgrades = [] }: ShopGridProps) {
   if (isLoading) {
     return <div className="text-center py-8">Loading items...</div>;
   }
@@ -61,7 +62,8 @@ export function ShopGrid({ items, currentXP, onPurchase, isLoading }: ShopGridPr
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
       {items.map((item) => {
-        const canAfford = currentXP >= item.xpCost;
+        const isPurchased = item.upgradeType && purchasedUpgrades.includes(item.upgradeType);
+        const canAfford = currentXP >= item.xpCost && !isPurchased;
 
         return (
           <Card key={item.itemId} className="hover:shadow-lg transition-shadow">
@@ -98,7 +100,7 @@ export function ShopGrid({ items, currentXP, onPurchase, isLoading }: ShopGridPr
                 onClick={() => onPurchase(item.itemId)}
                 disabled={!canAfford}
               >
-                {canAfford ? 'Purchase' : 'Not Enough XP'}
+                {isPurchased ? 'Already Owned' : canAfford ? 'Purchase' : 'Not Enough XP'}
               </Button>
             </CardContent>
           </Card>

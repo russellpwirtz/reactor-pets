@@ -1,13 +1,16 @@
 package com.reactor.pets.api.controller;
 
+import com.reactor.pets.api.dto.PurchaseResponse;
 import com.reactor.pets.command.PurchaseEquipmentCommand;
 import com.reactor.pets.command.PurchaseUpgradeCommand;
 import com.reactor.pets.domain.ItemDefinition;
 import com.reactor.pets.domain.ItemType;
 import com.reactor.pets.domain.UpgradeType;
 import com.reactor.pets.query.GetPetCreationCostQuery;
+import com.reactor.pets.query.GetPlayerProgressionQuery;
 import com.reactor.pets.query.GetShopItemQuery;
 import com.reactor.pets.query.GetShopItemsQuery;
+import com.reactor.pets.query.PlayerProgressionView;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -91,17 +94,50 @@ public class ShopController {
             @ApiResponse(responseCode = "400", description = "Invalid request or insufficient XP"),
             @ApiResponse(responseCode = "404", description = "Item not found")
     })
-    public CompletableFuture<ResponseEntity<String>> purchaseEquipment(
+    public CompletableFuture<ResponseEntity<PurchaseResponse>> purchaseEquipment(
             @Parameter(description = "Equipment item ID") @PathVariable String itemId) {
         log.info("REST API: Purchasing equipment: {}", itemId);
 
-        return commandGateway
-                .send(new PurchaseEquipmentCommand(PLAYER_ID, itemId))
-                .thenApply(result -> ResponseEntity.ok("Equipment purchased successfully"))
-                .exceptionally(ex -> {
-                    log.error("Failed to purchase equipment", ex);
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body("Purchase failed: " + ex.getCause().getMessage());
+        // First, get the item to know the cost
+        return queryGateway
+                .query(new GetShopItemQuery(itemId), ItemDefinition.class)
+                .thenCompose(item -> {
+                    if (item == null) {
+                        return CompletableFuture.completedFuture(
+                                ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                        .body(PurchaseResponse.builder()
+                                                .success(false)
+                                                .message("Item not found: " + itemId)
+                                                .itemId(itemId)
+                                                .build()));
+                    }
+
+                    // Purchase the equipment
+                    return commandGateway
+                            .send(new PurchaseEquipmentCommand(PLAYER_ID, itemId))
+                            .thenCompose(result -> {
+                                // Query updated player progression
+                                return queryGateway
+                                        .query(new GetPlayerProgressionQuery(PLAYER_ID), PlayerProgressionView.class)
+                                        .thenApply(progression -> ResponseEntity.ok(
+                                                PurchaseResponse.builder()
+                                                        .success(true)
+                                                        .message("Equipment purchased successfully")
+                                                        .itemId(itemId)
+                                                        .xpCost(item.getXpCost())
+                                                        .remainingXP(progression.getTotalXP())
+                                                        .build()));
+                            })
+                            .exceptionally(ex -> {
+                                log.error("Failed to purchase equipment", ex);
+                                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                        .body(PurchaseResponse.builder()
+                                                .success(false)
+                                                .message("Purchase failed: " + ex.getCause().getMessage())
+                                                .itemId(itemId)
+                                                .xpCost(item.getXpCost())
+                                                .build());
+                            });
                 });
     }
 
@@ -112,17 +148,51 @@ public class ShopController {
             @ApiResponse(responseCode = "400", description = "Invalid request or insufficient XP"),
             @ApiResponse(responseCode = "404", description = "Upgrade not found")
     })
-    public CompletableFuture<ResponseEntity<String>> purchaseUpgrade(
+    public CompletableFuture<ResponseEntity<PurchaseResponse>> purchaseUpgrade(
             @Parameter(description = "Upgrade type") @PathVariable UpgradeType upgradeType) {
         log.info("REST API: Purchasing upgrade: {}", upgradeType);
 
-        return commandGateway
-                .send(new PurchaseUpgradeCommand(PLAYER_ID, upgradeType))
-                .thenApply(result -> ResponseEntity.ok("Upgrade purchased successfully"))
-                .exceptionally(ex -> {
-                    log.error("Failed to purchase upgrade", ex);
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body("Purchase failed: " + ex.getCause().getMessage());
+        // Get upgrade definition for cost
+        return CompletableFuture.supplyAsync(() -> com.reactor.pets.domain.ShopCatalog.getUpgrade(upgradeType))
+                .thenCompose(upgradeOpt -> {
+                    if (upgradeOpt.isEmpty()) {
+                        return CompletableFuture.completedFuture(
+                                ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                        .body(PurchaseResponse.builder()
+                                                .success(false)
+                                                .message("Upgrade not found: " + upgradeType)
+                                                .itemId(upgradeType.name())
+                                                .build()));
+                    }
+
+                    ItemDefinition upgrade = upgradeOpt.get();
+
+                    // Purchase the upgrade
+                    return commandGateway
+                            .send(new PurchaseUpgradeCommand(PLAYER_ID, upgradeType))
+                            .thenCompose(result -> {
+                                // Query updated player progression
+                                return queryGateway
+                                        .query(new GetPlayerProgressionQuery(PLAYER_ID), PlayerProgressionView.class)
+                                        .thenApply(progression -> ResponseEntity.ok(
+                                                PurchaseResponse.builder()
+                                                        .success(true)
+                                                        .message("Upgrade purchased successfully")
+                                                        .itemId(upgradeType.name())
+                                                        .xpCost(upgrade.getXpCost())
+                                                        .remainingXP(progression.getTotalXP())
+                                                        .build()));
+                                            })
+                            .exceptionally(ex -> {
+                                log.error("Failed to purchase upgrade", ex);
+                                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                        .body(PurchaseResponse.builder()
+                                                .success(false)
+                                                .message("Purchase failed: " + ex.getCause().getMessage())
+                                                .itemId(upgradeType.name())
+                                                .xpCost(upgrade.getXpCost())
+                                                .build());
+                            });
                 });
     }
 
