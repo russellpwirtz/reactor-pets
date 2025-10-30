@@ -15,27 +15,27 @@ interface ShopGridProps {
 
 const itemIcons: Record<string, string> = {
   // Equipment - Food Bowls
-  BASIC_BOWL: '🍽️',
-  LARGE_BOWL: '🍲',
-  PREMIUM_BOWL: '🏆',
+  SLOW_FEEDER: '🍽️',
+  NUTRIENT_BOWL: '🍲',
+  AUTO_FEEDER: '🏆',
   // Equipment - Toys
-  SIMPLE_BALL: '⚽',
-  INTERACTIVE_TOY: '🎮',
-  LUXURY_TOY_SET: '🎁',
+  TOY_BOX: '🎾',
+  EXERCISE_WHEEL: '⚽',
+  ENTERTAINMENT_SYSTEM: '🎮',
   // Equipment - Accessories
-  BASIC_COLLAR: '📿',
-  COMFORT_BED: '🛏️',
+  COZY_BED: '🛏️',
+  XP_CHARM: '📿',
   HEALTH_MONITOR: '💚',
   // Permanent Upgrades
-  BETTER_METABOLISM: '⚡',
-  CHEERFUL_DISPOSITION: '😊',
-  STRONG_GENETICS: '🧬',
-  GOURMET_KITCHEN: '👨‍🍳',
-  RAPID_HATCHER: '🥚',
+  EFFICIENT_METABOLISM: '⚡',
+  HAPPY_DISPOSITION: '😊',
+  STURDY_GENETICS: '🧬',
+  INDUSTRIAL_KITCHEN: '👨‍🍳',
+  FAST_HATCHER: '🥚',
   MULTI_PET_LICENSE_I: '🎟️',
   MULTI_PET_LICENSE_II: '🎫',
   MULTI_PET_LICENSE_III: '🏅',
-  // Consumables
+  // Consumables (for future phase)
   APPLE: '🍎',
   PIZZA: '🍕',
   GOURMET_MEAL: '🍽️',
@@ -64,13 +64,13 @@ export function ShopGrid({ items, currentXP, onPurchase, isLoading }: ShopGridPr
         const canAfford = currentXP >= item.xpCost;
 
         return (
-          <Card key={item.itemType} className="hover:shadow-lg transition-shadow">
+          <Card key={item.itemId} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="text-center text-4xl mb-2">
-                {itemIcons[item.itemType] || '📦'}
+                {itemIcons[item.itemId] || '📦'}
               </div>
               <CardTitle className="text-center text-base">
-                {item.itemType.replace(/_/g, ' ')}
+                {item.name}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -78,10 +78,10 @@ export function ShopGrid({ items, currentXP, onPurchase, isLoading }: ShopGridPr
                 {item.description}
               </p>
 
-              {item.slot && (
+              {item.equipmentSlot && (
                 <div className="text-center">
                   <Badge variant="outline" className="text-xs">
-                    {item.slot.replace(/_/g, ' ')}
+                    {item.equipmentSlot.replace(/_/g, ' ')}
                   </Badge>
                 </div>
               )}
@@ -95,7 +95,7 @@ export function ShopGrid({ items, currentXP, onPurchase, isLoading }: ShopGridPr
 
               <Button
                 className="w-full"
-                onClick={() => onPurchase(item.itemType)}
+                onClick={() => onPurchase(item.itemId)}
                 disabled={!canAfford}
               >
                 {canAfford ? 'Purchase' : 'Not Enough XP'}

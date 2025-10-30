@@ -42,7 +42,7 @@ class PetCreationServiceTest {
   @InjectMocks
   private PetCreationService petCreationService;
 
-  private static final String PLAYER_ID = "PLAYER";
+  private static final String PLAYER_ID = "PLAYER_1";
   private static final String PET_ID = "test-pet-123";
   private static final String PET_NAME = "Fluffy";
   private static final PetType PET_TYPE = PetType.CAT;

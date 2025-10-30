@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PetCreationService {
 
-  private static final String PLAYER_ID = "PLAYER";
+  private static final String PLAYER_ID = "PLAYER_1";
   private static final long COST_INCREMENT = 50L;
 
   private final CommandGateway commandGateway;
@@ -32,8 +32,8 @@ public class PetCreationService {
    * First pet is FREE, subsequent pets cost 50, 100, 150, etc.
    *
    * @param petId the ID for the new pet
-   * @param name the name for the new pet
-   * @param type the type of pet
+   * @param name  the name for the new pet
+   * @param type  the type of pet
    * @return CompletableFuture that completes when pet is created
    * @throws IllegalStateException if player has insufficient XP
    */
@@ -81,7 +81,8 @@ public class PetCreationService {
   }
 
   /**
-   * Calculates the XP cost for creating a pet based on how many have been created.
+   * Calculates the XP cost for creating a pet based on how many have been
+   * created.
    *
    * @param totalPetsCreated number of pets already created
    * @return XP cost (0 for first pet, 50 for second, 100 for third, etc.)

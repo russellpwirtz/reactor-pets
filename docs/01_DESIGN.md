@@ -282,7 +282,7 @@ Post-prestige | Replay with bonuses              | 1.1x base  | Ramps faster due
    @Aggregate
    class PlayerProgression {
      @AggregateIdentifier
-     private String playerId; // "PLAYER" for single-player
+     private String playerId; // "PLAYER_1" for single-player
      private long totalXP;
      private long lifetimeXPEarned; // Never decreases, for achievements
      private int totalPetsCreated;

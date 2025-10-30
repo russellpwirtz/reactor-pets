@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 class PlayerInventoryConsumableTest {
 
   private FixtureConfiguration<PlayerInventory> fixture;
-  private static final String PLAYER_ID = "PLAYER_INVENTORY";
+  private static final String PLAYER_ID = "PLAYER_1_INVENTORY";
 
   @BeforeEach
   void setUp() {

@@ -19,7 +19,7 @@ class PetConsumableTest {
 
   private FixtureConfiguration<Pet> fixture;
   private static final String PET_ID = "pet-1";
-  private static final String PLAYER_ID = "PLAYER";
+  private static final String PLAYER_ID = "PLAYER_1";
 
   @BeforeEach
   void setUp() {
@@ -88,7 +88,8 @@ class PetConsumableTest {
         .expectSuccessfulHandlerExecution();
   }
 
-  // Note: Testing dead pet would require a PetDiedEvent which has complex dependencies
+  // Note: Testing dead pet would require a PetDiedEvent which has complex
+  // dependencies
   // This is covered by integration tests instead
 
   @Test
@@ -101,7 +102,8 @@ class PetConsumableTest {
         .expectExceptionMessage("Consumable type cannot be null");
   }
 
-  // Note: Event handler tests for PetBecameSickEvent, PetCuredEvent, and ConsumableUsedEvent
+  // Note: Event handler tests for PetBecameSickEvent, PetCuredEvent, and
+  // ConsumableUsedEvent
   // are tested via integration tests since they're applied through event sourcing
 
   @Test

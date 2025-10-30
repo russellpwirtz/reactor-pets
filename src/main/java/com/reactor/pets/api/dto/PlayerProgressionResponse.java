@@ -10,18 +10,21 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(description = "Player progression information")
 public class PlayerProgressionResponse {
-  @Schema(description = "Player ID", example = "PLAYER")
+  @Schema(description = "Player ID", example = "PLAYER_1")
   private String playerId;
 
   @Schema(description = "Current spendable XP", example = "1250")
-  private long totalXP;
+  private long currentXP;
 
   @Schema(description = "Lifetime XP earned (never decreases)", example = "5000")
-  private long lifetimeXPEarned;
+  private long lifetimeXP;
 
-  @Schema(description = "Total pets created", example = "3")
-  private int totalPetsCreated;
+  @Schema(description = "Current XP multiplier (highest among alive pets)", example = "1.5")
+  private double xpMultiplier;
 
-  @Schema(description = "Prestige level", example = "0")
-  private int prestigeLevel;
+  @Schema(description = "Highest XP multiplier ever achieved", example = "2.0")
+  private double highestMultiplier;
+
+  @Schema(description = "Total XP spent on purchases", example = "3750")
+  private long totalXPSpent;
 }

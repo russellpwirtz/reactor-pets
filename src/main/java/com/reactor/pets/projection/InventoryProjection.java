@@ -78,7 +78,7 @@ public class InventoryProjection {
   public InventoryView handle(GetInventoryQuery query) {
     log.debug("Handling GetInventoryQuery for inventoryId: {}", query.getPlayerId());
     // Map playerId to inventoryId for single player mode
-    String inventoryId = "PLAYER_INVENTORY";
+    String inventoryId = "PLAYER_1_INVENTORY";
     return inventoryRepository
         .findById(inventoryId)
         .orElse(null);

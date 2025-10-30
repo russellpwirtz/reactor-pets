@@ -89,11 +89,23 @@ public class TimeTickScheduler {
     return Mono.fromFuture(commandGateway.send(command))
         .thenReturn(pet.getPetId())
         .doOnSuccess(petId -> log.trace("Time tick #{} sent to pet: {}", currentTick, petId))
-        .doOnError(
-            error ->
-                log.error(
-                    "Failed to send time tick to pet {}: {}",
-                    pet.getPetId(),
-                    error.getMessage()));
+        .onErrorResume(
+            error -> {
+              if (error.getMessage() != null
+                  && error.getMessage().contains("aggregate was not found")) {
+                // Pet aggregate doesn't exist in event store - log and skip
+                log.warn(
+                    "Skipping time tick for pet {} - aggregate not found in event store. "
+                        + "This may indicate a stale projection.",
+                    pet.getPetId());
+                return Mono.empty(); // Continue without this pet
+              }
+              // For other errors, log and propagate
+              log.error(
+                  "Failed to send time tick to pet {}: {}",
+                  pet.getPetId(),
+                  error.getMessage());
+              return Mono.error(error);
+            });
   }
 }

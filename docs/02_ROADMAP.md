@@ -1,7 +1,7 @@
 # Reactor Pets - Implementation Roadmap
 
 **Last Updated:** 2025-10-29
-**Current Phase:** Phase 7C Complete (Shop System) → Phase 7D In Progress (Consumables)
+**Current Phase:** Phase 7 Complete → Phase 7E (Power-Leveling) Next
 
 ---
 
@@ -11,21 +11,11 @@
 - ✅ **Phase 1-6:** Foundation, lifecycle, time system, evolution, multiple pets, REST API
 - ✅ **Phase 7A:** XP System Foundation
 - ✅ **Phase 7B:** Equipment System
-- ✅ **Phase 7C:** XP Shop (Domain models, saga, REST endpoints - CLI pending)
+- ✅ **Phase 7C:** XP Shop System
+- ✅ **Phase 7D:** Consumables & Auto-Actions
 
 ### Current Phase 🚧
-**Phase 7D: Consumables & Auto-Actions** (Session 1 of 2-3)
-- ✅ Consumable domain model (7 types: Apple, Pizza, Gourmet Meal, Basic Medicine, Advanced Medicine, Cookie, Premium Toy)
-- ✅ PlayerInventory extended for consumables (quantity tracking)
-- ✅ Pet sickness state (isSick, lowHealthTicks)
-- ✅ UseConsumableCommand with effects (hunger/happiness/health restore)
-- ✅ ConsumableUsageSaga (inventory coordination)
-- ✅ Equipment modifiers apply to consumables
-- 🚧 Sickness mechanic in TimeTickCommand (health <30 for 3+ ticks → 20% sick chance)
-- 🚧 Auto-actions (Auto-Feeder at hunger >70, Entertainment System at happiness <50)
-- ⏳ Add consumables to shop
-- ⏳ CLI/REST endpoints for consumables
-- ⏳ Unit and integration tests
+**Ready for Phase 7E: Power-Leveling & Balance Tuning**
 
 ### Upcoming Phases 📋
 - **Phase 7E:** Power-Leveling & Balance Tuning (1 session)
@@ -34,87 +24,35 @@
 
 ---
 
-## Phase 7C: XP Shop ✅ COMPLETED
+## Completed Phase 7: XP & Equipment System ✅
 
-**Implemented:**
-- ✅ ItemDefinition, ItemType (EQUIPMENT, PERMANENT_UPGRADE), ShopCatalog
-- ✅ 9 Equipment items across 3 slots (Food Bowl, Toy, Accessory)
-- ✅ 8 Permanent upgrades (metabolism, disposition, genetics, kitchen, hatcher, multi-pet licenses)
-- ✅ ShopPurchaseSaga with XP validation
-- ✅ PetCreationService with XP cost logic (FREE, 50, 100, 150...)
-- ✅ ShopProjection with query handlers
-- ✅ REST endpoints: GET /api/shop/items, /api/shop/upgrades, POST /api/shop/purchase/*
-- ✅ Comprehensive unit tests (ShopPurchaseSagaTest)
+### Phase 7A: XP System Foundation ✅
+- Player progression tracking with XP, levels, and lifetime stats
+- XP earning from pet interactions (feed, play, clean)
+- XP multiplier based on pet stats
+- REST endpoints for progression tracking
 
-**Pending:**
-- CLI commands for browsing shop and purchasing
+### Phase 7B: Equipment System ✅
+- Equipment items with slots (Food Bowl, Toy, Accessory)
+- Equipment modifiers affecting pet stats
+- Inventory management and equip/unequip mechanics
+- EquipmentSaga for coordinating equipment changes
+- REST endpoints for equipment management
 
----
+### Phase 7C: XP Shop ✅
+- Shop catalog with equipment and permanent upgrades
+- XP-based purchasing system
+- ShopPurchaseSaga with XP validation
+- Multi-pet license progression
+- REST endpoints for shop browsing and purchasing
 
-## Phase 7D: Consumables & Auto-Actions 🚧 IN PROGRESS
-
-**Goal:** Introduce consumable items and automation mechanics
-
-### Completed This Session ✅
-
-**Consumable Domain Model:**
-- `ConsumableType` enum with 7 types
-- `Consumable` class with effects (hunger/happiness/health restore, cures sickness)
-- `ConsumableCatalog` with XP costs:
-  - Food: Apple (50 XP), Pizza (100 XP), Gourmet Meal (200 XP)
-  - Medicine: Basic Medicine (100 XP), Advanced Medicine (200 XP)
-  - Treats: Cookie (75 XP), Premium Toy (150 XP)
-
-**PlayerInventory Extensions:**
-- `Map<ConsumableType, Integer> consumables` for quantity tracking
-- `AddConsumableCommand`, `RemoveConsumableCommand`
-- `ConsumableAddedEvent`, `ConsumableRemovedEvent`
-- Command handlers with validation
-
-**Pet Sickness System:**
-- Added `isSick` and `lowHealthTicks` fields
-- `PetBecameSickEvent`, `PetCuredEvent`
-- Event handlers for sickness state
-
-**Consumable Usage:**
-- `UseConsumableCommand` (petId, consumableType, playerId)
-- `ConsumableUsedEvent` (tracks restoration amounts and cure)
-- Command handler applies equipment modifiers (FOOD_EFFICIENCY, PLAY_EFFICIENCY)
-- Advanced Medicine cures sickness
-- Sick pets cannot use toys
-
-**Saga Coordination:**
-- `ConsumableUsageSaga` validates inventory and removes consumable before use
-
-### Next Session TODO 📝
-
-1. **Sickness Mechanic in TimeTickCommand:**
-   - Track lowHealthTicks when health <30
-   - 20% chance per tick to emit PetBecameSickEvent after 3+ low health ticks
-   - Sick pets: hunger/happiness decay +50%, cannot play
-
-2. **Auto-Action Logic in TimeTickCommand:**
-   - Query equipped items for Auto-Feeder and Entertainment System
-   - Auto-Feeder: hunger >70 → query inventory for food consumables → use Apple/Pizza/Gourmet Meal
-   - Entertainment System: happiness <50 → query inventory for treats → use Cookie/Premium Toy
-   - Silent when no consumables available
-
-3. **Shop Integration:**
-   - Add CONSUMABLE to ItemType enum
-   - Extend ShopCatalog with consumables
-   - Update ShopPurchaseSaga to handle consumable purchases
-   - Add to starter package (3 Apples)
-
-4. **CLI/REST:**
-   - CLI: `use <petId> <consumableType>`
-   - REST: `POST /api/pets/{id}/consumable/{type}`
-   - Update shop endpoints to include consumables
-
-5. **Testing:**
-   - Unit tests: Pet aggregate with UseConsumableCommand
-   - Unit tests: Sickness mechanic
-   - Integration tests: Auto-actions trigger correctly
-   - Integration tests: Equipment modifiers affect consumables
+### Phase 7D: Consumables & Auto-Actions ✅
+- 7 consumable types (food, medicine, treats)
+- Consumable usage with equipment modifier effects
+- Pet sickness mechanic (triggered by low health)
+- Auto-action equipment (Auto-Feeder, Entertainment System)
+- ConsumableUsageSaga for inventory coordination
+- Integrated consumables into shop system
 
 ---
 
@@ -212,14 +150,14 @@
 
 ## Success Metrics
 
-### Phase 7 Success
+### Phase 7 Success ✅
 - [x] Player can earn XP from interactions (7A)
 - [x] Equipment modifies pet stats with trade-offs (7B)
 - [x] Can purchase equipment and upgrades with XP (7C)
 - [x] Player progression tracked and persisted (7A)
-- [ ] Consumables provide immediate benefits (7D - in progress)
-- [ ] Automation items reduce manual actions (7D - pending)
-- [ ] Multi-pet power-leveling strategies viable (7E)
+- [x] Consumables provide immediate benefits (7D)
+- [x] Automation items reduce manual actions (7D)
+- [ ] Multi-pet power-leveling strategies viable (7E - next phase)
 
 ### Phase 8 Success
 - [ ] Achievements unlock with XP bonuses
@@ -235,16 +173,13 @@
 
 ## Implementation Notes
 
-**Phase 7C Shop System:**
-- ShopCatalog is static (no aggregate), query-only
-- PetCreationService coordinates XP spending before pet creation
-- Multi-Pet Licenses have prerequisite validation (must buy I before II, etc.)
-
-**Phase 7D Consumables (Current):**
-- Consumables are quantity-based (unlike equipment which is instance-based)
-- Equipment modifiers apply: FOOD_EFFICIENCY boosts food consumables, PLAY_EFFICIENCY boosts toys
-- Sickness prevents play action but allows consumable usage
-- Auto-actions will use cheapest available consumable first (Apple before Pizza)
+**Phase 7 Complete - Key Patterns:**
+- **Saga Coordination:** ShopPurchaseSaga, EquipmentSaga, ConsumableUsageSaga handle cross-aggregate operations
+- **Static Catalogs:** ShopCatalog, EquipmentCatalog, ConsumableCatalog provide game data (query-only, no aggregates)
+- **Quantity vs Instance:** Consumables are quantity-based, equipment is instance-based
+- **Equipment Modifiers:** FOOD_EFFICIENCY, PLAY_EFFICIENCY, XP_BOOST etc. affect various game mechanics
+- **Starter Package:** New players receive initial equipment and consumables (3 Apples, Cozy Bed)
+- **Pet Creation Costs:** First pet FREE, then 50/100/150 XP (requires Multi-Pet Licenses)
 
 **Axon Patterns:**
 - Heavy use of sagas for coordination (Shop, Equipment, Consumables)

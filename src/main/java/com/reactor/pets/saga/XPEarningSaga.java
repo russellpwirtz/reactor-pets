@@ -23,7 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Slf4j
 public class XPEarningSaga {
 
-  private static final String PLAYER_ID = "PLAYER"; // Single-player for now
+  private static final String PLAYER_ID = "PLAYER_1"; // Single-player for now
 
   @Autowired
   private transient CommandGateway commandGateway;
@@ -40,7 +40,8 @@ public class XPEarningSaga {
     this.petXpMultiplier = 1.0;
 
     // First pet creation gives bonus XP
-    // For now, all pet creations are tracked - the saga will determine if it's the first
+    // For now, all pet creations are tracked - the saga will determine if it's the
+    // first
     // We emit a PetCreatedForPlayerEvent to track this in PlayerProgression
     commandGateway.send(new PetCreatedForPlayerEvent(
         PLAYER_ID,
@@ -48,8 +49,7 @@ public class XPEarningSaga {
         event.getName(),
         event.getType(),
         1, // This will be updated by PlayerProgression aggregate
-        event.getTimestamp()
-    ));
+        event.getTimestamp()));
 
     // Note: First pet bonus (100 XP) will be handled by initialization
     // Not awarding XP for pet creation itself in Phase 7A
@@ -65,8 +65,7 @@ public class XPEarningSaga {
     commandGateway.send(new EarnXPCommand(
         PLAYER_ID,
         xpEarned,
-        String.format("Fed pet %s", event.getPetId())
-    ));
+        String.format("Fed pet %s", event.getPetId())));
   }
 
   @SagaEventHandler(associationProperty = "petId")
@@ -79,8 +78,7 @@ public class XPEarningSaga {
     commandGateway.send(new EarnXPCommand(
         PLAYER_ID,
         xpEarned,
-        String.format("Played with pet %s", event.getPetId())
-    ));
+        String.format("Played with pet %s", event.getPetId())));
   }
 
   @SagaEventHandler(associationProperty = "petId")
@@ -93,8 +91,7 @@ public class XPEarningSaga {
     commandGateway.send(new EarnXPCommand(
         PLAYER_ID,
         xpEarned,
-        String.format("Cleaned pet %s", event.getPetId())
-    ));
+        String.format("Cleaned pet %s", event.getPetId())));
   }
 
   @SagaEventHandler(associationProperty = "petId")
@@ -111,8 +108,7 @@ public class XPEarningSaga {
     commandGateway.send(new EarnXPCommand(
         PLAYER_ID,
         xpEarned,
-        String.format("Pet %s survived tick", event.getPetId())
-    ));
+        String.format("Pet %s survived tick", event.getPetId())));
   }
 
   @SagaEventHandler(associationProperty = "petId")
@@ -136,7 +132,6 @@ public class XPEarningSaga {
     commandGateway.send(new EarnXPCommand(
         PLAYER_ID,
         xpEarned,
-        String.format("Pet %s evolved to %s", event.getPetId(), event.getNewStage())
-    ));
+        String.format("Pet %s evolved to %s", event.getPetId(), event.getNewStage())));
   }
 }

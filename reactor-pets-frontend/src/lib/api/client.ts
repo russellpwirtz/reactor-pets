@@ -20,6 +20,15 @@ class ApiError extends Error {
     public data?: unknown
   ) {
     super(`API Error: ${status} ${statusText}`);
+    this.name = 'ApiError';
+  }
+
+  isNotFound(): boolean {
+    return this.status === 404;
+  }
+
+  isServerError(): boolean {
+    return this.status >= 500;
   }
 }
 

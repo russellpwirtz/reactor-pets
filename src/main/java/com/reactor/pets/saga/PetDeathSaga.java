@@ -26,8 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Slf4j
 public class PetDeathSaga {
 
-  private static final String PLAYER_ID = "PLAYER"; // Single-player for now
-  private static final String INVENTORY_ID = "PLAYER_INVENTORY"; // Inventory ID
+  private static final String INVENTORY_ID = "PLAYER_1_INVENTORY"; // Inventory ID
 
   @Autowired
   private transient CommandGateway commandGateway;
@@ -57,7 +56,7 @@ public class PetDeathSaga {
     try {
       List<PetStatusView> alivePets = queryGateway
           .query(new GetAlivePetsQuery(),
-                 org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf(PetStatusView.class))
+              org.axonframework.messaging.responsetypes.ResponseTypes.multipleInstancesOf(PetStatusView.class))
           .join();
 
       if (alivePets != null && !alivePets.isEmpty()) {
@@ -76,8 +75,7 @@ public class PetDeathSaga {
           commandGateway.send(new MournPetCommand(
               alivePet.getPetId(),
               event.getPetId(),
-              happinessLoss
-          ));
+              happinessLoss));
         }
       }
     } catch (Exception e) {

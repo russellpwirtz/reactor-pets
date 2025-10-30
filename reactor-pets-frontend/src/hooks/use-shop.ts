@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
 export function useShopItems() {
@@ -31,9 +31,19 @@ export function usePurchaseEquipment() {
       });
     },
     onError: (error: Error) => {
+      let description = error.message;
+
+      if (error instanceof ApiError) {
+        if (error.status === 400) {
+          description = 'Insufficient XP or item unavailable';
+        } else if (error.isNotFound()) {
+          description = 'Item not found in shop';
+        }
+      }
+
       toast({
         title: 'Purchase failed',
-        description: error.message,
+        description,
         variant: 'destructive',
       });
     },
@@ -54,9 +64,19 @@ export function usePurchaseUpgrade() {
       });
     },
     onError: (error: Error) => {
+      let description = error.message;
+
+      if (error instanceof ApiError) {
+        if (error.status === 400) {
+          description = 'Insufficient XP or upgrade already owned';
+        } else if (error.isNotFound()) {
+          description = 'Upgrade not found in shop';
+        }
+      }
+
       toast({
         title: 'Purchase failed',
-        description: error.message,
+        description,
         variant: 'destructive',
       });
     },
@@ -78,9 +98,19 @@ export function usePurchaseConsumable() {
       });
     },
     onError: (error: Error) => {
+      let description = error.message;
+
+      if (error instanceof ApiError) {
+        if (error.status === 400) {
+          description = 'Insufficient XP or item unavailable';
+        } else if (error.isNotFound()) {
+          description = 'Item not found in shop';
+        }
+      }
+
       toast({
         title: 'Purchase failed',
-        description: error.message,
+        description,
         variant: 'destructive',
       });
     },

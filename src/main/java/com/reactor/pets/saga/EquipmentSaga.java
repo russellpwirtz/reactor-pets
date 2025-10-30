@@ -21,7 +21,8 @@ import org.axonframework.spring.stereotype.Saga;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * Saga that coordinates equipment operations across Pet and PlayerInventory aggregates.
+ * Saga that coordinates equipment operations across Pet and PlayerInventory
+ * aggregates.
  * Handles equip and unequip flows with proper cross-aggregate coordination.
  */
 @Saga
@@ -52,7 +53,7 @@ public class EquipmentSaga {
         command.getItemId(), command.getPetId());
 
     // For single player mode, always use PLAYER_INVENTORY
-    String inventoryId = "PLAYER_INVENTORY";
+    String inventoryId = "PLAYER_1_INVENTORY";
 
     this.playerId = command.getPlayerId();
     this.petId = command.getPetId();
@@ -134,7 +135,7 @@ public class EquipmentSaga {
         event.getItem().getItemId(), event.getPetId());
 
     // Add item back to inventory (use fixed inventory ID for single player)
-    String inventoryId = "PLAYER_INVENTORY";
+    String inventoryId = "PLAYER_1_INVENTORY";
     commandGateway.send(new AddItemToInventoryCommand(inventoryId, event.getItem()));
   }
 }

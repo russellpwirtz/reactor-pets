@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class PetManagerService {
 
-  private static final String PLAYER_ID = "PLAYER"; // Single-player for now
+  private static final String PLAYER_ID = "PLAYER_1"; // Single-player for now
 
   private final QueryGateway queryGateway;
 
@@ -52,7 +52,7 @@ public class PetManagerService {
   /**
    * Get leaderboard of pets sorted by the specified metric.
    *
-   * @param type The type of leaderboard (AGE, HAPPINESS, HEALTH)
+   * @param type      The type of leaderboard (AGE, HAPPINESS, HEALTH)
    * @param aliveOnly Whether to filter for only alive pets
    * @return Top 10 pets sorted by the specified metric
    */
@@ -164,12 +164,11 @@ public class PetManagerService {
       return sb.toString();
     }
 
-    String metricName =
-        switch (type) {
-          case AGE -> "Age";
-          case HAPPINESS -> "Happiness";
-          case HEALTH -> "Health";
-        };
+    String metricName = switch (type) {
+      case AGE -> "Age";
+      case HAPPINESS -> "Happiness";
+      case HEALTH -> "Health";
+    };
 
     sb.append(
         String.format(
@@ -178,12 +177,11 @@ public class PetManagerService {
 
     int rank = 1;
     for (PetStatusView pet : topPets) {
-      int metricValue =
-          switch (type) {
-            case AGE -> pet.getAge();
-            case HAPPINESS -> pet.getHappiness();
-            case HEALTH -> pet.getHealth();
-          };
+      int metricValue = switch (type) {
+        case AGE -> pet.getAge();
+        case HAPPINESS -> pet.getHappiness();
+        case HEALTH -> pet.getHealth();
+      };
 
       String trophy = rank == 1 ? "🏆" : rank == 2 ? "🥈" : rank == 3 ? "🥉" : "  ";
 

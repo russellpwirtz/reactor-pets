@@ -1,9 +1,11 @@
 export type ItemCategory = 'EQUIPMENT' | 'PERMANENT_UPGRADE' | 'CONSUMABLE';
 
 export interface ShopItem {
-  itemType: string;
-  category: ItemCategory;
-  xpCost: number;
+  itemId: string;
+  name: string;
   description: string;
-  slot?: string;
+  itemType: ItemCategory;
+  xpCost: number;
+  equipmentSlot?: string;
+  upgradeType?: string;
 }

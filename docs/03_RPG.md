@@ -1470,7 +1470,7 @@ This addendum transforms the virtual pet from a care simulator into a **tactical
      void on(PlayerAttackExecutedEvent event) {
        addLog(event.runId(), new CombatLogEntry(
          event.timestamp(),
-         "Player",
+         "PLAYER_1",
          "Fluffy used " + event.skillUsed() + " for " + event.damage() + " damage" +
          (event.isCritical() ? " (CRITICAL!)" : "")
        ));

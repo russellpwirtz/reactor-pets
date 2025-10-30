@@ -28,7 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Slf4j
 public class ShopPurchaseSaga {
 
-  private static final String INVENTORY_ID = "PLAYER_INVENTORY";
+  private static final String INVENTORY_ID = "PLAYER_1_INVENTORY";
 
   @Autowired
   private transient CommandGateway commandGateway;
