@@ -5,6 +5,7 @@ import com.reactor.pets.command.InitializePlayerCommand;
 import com.reactor.pets.command.PurchaseEquipmentCommand;
 import com.reactor.pets.command.PurchaseUpgradeCommand;
 import com.reactor.pets.command.SpendXPCommand;
+import com.reactor.pets.command.TrackPetCreationCommand;
 import com.reactor.pets.domain.ItemDefinition;
 import com.reactor.pets.domain.ItemType;
 import com.reactor.pets.domain.ShopCatalog;
@@ -178,6 +179,33 @@ public class PlayerProgression {
             command.getPlayerId(),
             command.getUpgradeType(),
             upgradeDef.getXpCost(),
+            Instant.now()));
+  }
+
+  @CommandHandler
+  public void handle(TrackPetCreationCommand command) {
+    // Business rules validation
+    if (command.getPetId() == null || command.getPetId().isBlank()) {
+      throw new IllegalArgumentException("Pet ID cannot be empty");
+    }
+    if (command.getPetName() == null || command.getPetName().isBlank()) {
+      throw new IllegalArgumentException("Pet name cannot be empty");
+    }
+    if (command.getPetType() == null) {
+      throw new IllegalArgumentException("Pet type cannot be null");
+    }
+
+    // Calculate new pet count
+    int newPetCount = this.totalPetsCreated + 1;
+
+    // Apply event
+    AggregateLifecycle.apply(
+        new PetCreatedForPlayerEvent(
+            command.getPlayerId(),
+            command.getPetId(),
+            command.getPetName(),
+            command.getPetType(),
+            newPetCount,
             Instant.now()));
   }
 

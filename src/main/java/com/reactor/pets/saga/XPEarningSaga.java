@@ -3,7 +3,6 @@ package com.reactor.pets.saga;
 import com.reactor.pets.command.EarnXPCommand;
 import com.reactor.pets.event.PetCleanedEvent;
 import com.reactor.pets.event.PetCreatedEvent;
-import com.reactor.pets.event.PetCreatedForPlayerEvent;
 import com.reactor.pets.event.PetEvolvedEvent;
 import com.reactor.pets.event.PetFedEvent;
 import com.reactor.pets.event.PetPlayedWithEvent;
@@ -17,7 +16,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Saga that coordinates XP earning across aggregates.
- * Listens to pet events and dispatches EarnXPCommand to PlayerProgression.
+ *
+ * <p>Responsibilities:
+ * <ul>
+ *   <li>Track pet XP multiplier (increases with age and care quality)</li>
+ *   <li>Award XP for pet interactions (feed, play, clean)</li>
+ *   <li>Award XP for pet survival (per time tick)</li>
+ *   <li>Award XP for pet evolution milestones</li>
+ *   <li>Dispatch EarnXPCommand to PlayerProgression aggregate</li>
+ * </ul>
+ *
+ * <p>Note: Player progression tracking (pet count, achievements, etc.) is handled
+ * by {@link PlayerProgressionSaga} to maintain single responsibility.
  */
 @Saga
 @Slf4j
@@ -36,21 +46,10 @@ public class XPEarningSaga {
   public void on(PetCreatedEvent event) {
     log.debug("XPEarningSaga: Pet created - {}", event.getPetId());
 
-    // Initialize pet XP multiplier
+    // Initialize pet XP multiplier for this pet
     this.petXpMultiplier = 1.0;
 
-    // First pet creation gives bonus XP
-    // For now, all pet creations are tracked - the saga will determine if it's the
-    // first
-    // We emit a PetCreatedForPlayerEvent to track this in PlayerProgression
-    commandGateway.send(new PetCreatedForPlayerEvent(
-        PLAYER_ID,
-        event.getPetId(),
-        event.getName(),
-        event.getType(),
-        1, // This will be updated by PlayerProgression aggregate
-        event.getTimestamp()));
-
+    // Note: Pet creation tracking is handled by PlayerProgressionSaga
     // Note: First pet bonus (100 XP) will be handled by initialization
     // Not awarding XP for pet creation itself in Phase 7A
   }

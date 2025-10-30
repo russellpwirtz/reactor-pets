@@ -11,7 +11,6 @@ import com.reactor.pets.aggregate.PetType;
 import com.reactor.pets.command.EarnXPCommand;
 import com.reactor.pets.event.PetCleanedEvent;
 import com.reactor.pets.event.PetCreatedEvent;
-import com.reactor.pets.event.PetCreatedForPlayerEvent;
 import com.reactor.pets.event.PetEvolvedEvent;
 import com.reactor.pets.event.PetFedEvent;
 import com.reactor.pets.event.PetPlayedWithEvent;
@@ -36,16 +35,13 @@ class XPEarningSagaTest {
   }
 
   @Test
-  @DisplayName("should start saga on PetCreatedEvent and emit PetCreatedForPlayerEvent")
+  @DisplayName("should start saga on PetCreatedEvent and initialize XP multiplier")
   void shouldStartSagaOnPetCreatedEvent() {
     fixture
         .givenNoPriorActivity()
         .whenPublishingA(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         .expectActiveSagas(1)
-        .expectDispatchedCommandsMatching(
-            exactSequenceOf(
-                messageWithPayload(any(PetCreatedForPlayerEvent.class)),
-                andNoMore()));
+        .expectNoDispatchedCommands(); // No commands - just initializes state
   }
 
   @Test

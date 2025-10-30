@@ -9,6 +9,7 @@ import com.reactor.pets.event.ItemEquipRequestedEvent;
 import com.reactor.pets.event.ItemEquippedEvent;
 import com.reactor.pets.event.ItemUnequipRequestedEvent;
 import com.reactor.pets.event.ItemUnequippedEvent;
+import com.reactor.pets.event.PetDiedEvent;
 import com.reactor.pets.query.GetInventoryItemQuery;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -21,9 +22,17 @@ import org.axonframework.spring.stereotype.Saga;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
- * Saga that coordinates equipment operations across Pet and PlayerInventory
- * aggregates.
- * Handles equip and unequip flows with proper cross-aggregate coordination.
+ * Saga that coordinates equipment lifecycle across Pet and PlayerInventory aggregates.
+ *
+ * <p>Handles all equipment transitions:
+ * <ul>
+ *   <li>Equipping items (remove from inventory, add to pet)</li>
+ *   <li>Unequipping items (remove from pet, add to inventory)</li>
+ *   <li>Death cleanup (return all equipped items to inventory)</li>
+ * </ul>
+ *
+ * <p>This saga ensures equipment is properly coordinated between aggregates
+ * and never lost during transitions.
  */
 @Saga
 @Slf4j
@@ -137,5 +146,45 @@ public class EquipmentSaga {
     // Add item back to inventory (use fixed inventory ID for single player)
     String inventoryId = "PLAYER_1_INVENTORY";
     commandGateway.send(new AddItemToInventoryCommand(inventoryId, event.getItem()));
+  }
+
+  /**
+   * Handle pet death - return all equipped items to inventory.
+   *
+   * <p>This is essentially a "forced unequip all" operation triggered by death.
+   * Equipment is returned to the player's inventory so it can be used on other pets.
+   *
+   * <p>Future enhancements:
+   * <ul>
+   *   <li>Death-specific item drops (memorial tokens, special rewards)</li>
+   *   <li>Item durability loss on death</li>
+   *   <li>Special handling for unique/soulbound items</li>
+   * </ul>
+   */
+  @StartSaga
+  @EndSaga
+  @SagaEventHandler(associationProperty = "petId")
+  public void on(PetDiedEvent event) {
+    log.info("EquipmentSaga: Pet {} died, processing equipment cleanup",
+        event.getPetId());
+
+    if (event.getEquippedItems() == null || event.getEquippedItems().isEmpty()) {
+      log.debug("EquipmentSaga: No equipped items to return for pet {}",
+          event.getPetId());
+      return;
+    }
+
+    // Return each equipped item to inventory
+    String inventoryId = "PLAYER_1_INVENTORY";
+    int itemsReturned = 0;
+
+    for (EquipmentItem item : event.getEquippedItems()) {
+      log.debug("EquipmentSaga: Returning {} to inventory", item.getItemId());
+      commandGateway.send(new AddItemToInventoryCommand(inventoryId, item));
+      itemsReturned++;
+    }
+
+    log.info("EquipmentSaga: Equipment cleanup completed for pet {} ({} items returned)",
+        event.getPetId(), itemsReturned);
   }
 }

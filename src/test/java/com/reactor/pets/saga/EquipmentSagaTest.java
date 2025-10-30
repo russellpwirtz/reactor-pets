@@ -19,17 +19,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/** Unit tests for PetDeathSaga. */
-@DisplayName("PetDeathSaga")
-class PetDeathSagaTest {
+/** Unit tests for EquipmentSaga death handling. */
+@DisplayName("EquipmentSaga - Death Handling")
+class EquipmentSagaTest {
 
-  private SagaTestFixture<PetDeathSaga> fixture;
+  private SagaTestFixture<EquipmentSaga> fixture;
   private static final String PET_ID = "test-pet-123";
   private static final Instant NOW = Instant.now();
 
   @BeforeEach
   void setUp() {
-    fixture = new SagaTestFixture<>(PetDeathSaga.class);
+    fixture = new SagaTestFixture<>(EquipmentSaga.class);
   }
 
   @Test
@@ -38,7 +38,8 @@ class PetDeathSagaTest {
     fixture
         .givenNoPriorActivity()
         .whenPublishingA(new PetDiedEvent(PET_ID, 10, 100, "Neglect", new ArrayList<>(), NOW))
-        .expectActiveSagas(0); // Saga starts and ends immediately
+        .expectActiveSagas(0) // Saga starts and ends immediately
+        .expectNoDispatchedCommands(); // No items to return
   }
 
   @Test
@@ -76,7 +77,7 @@ class PetDeathSagaTest {
         "item-1",
         "PREMIUM_COLLAR",
         EquipmentSlot.ACCESSORY,
-        Map.of(StatModifier.HEALTH_REGEN, 0.15)));
+        Map.of(StatModifier.HEALTH_REGEN, 0.05)));
 
     fixture
         .givenNoPriorActivity()
@@ -94,6 +95,39 @@ class PetDeathSagaTest {
     fixture
         .givenNoPriorActivity()
         .whenPublishingA(new PetDiedEvent(PET_ID, 0, 0, "Disease", null, NOW))
-        .expectActiveSagas(0); // Should not crash on null
+        .expectActiveSagas(0)
+        .expectNoDispatchedCommands();
+  }
+
+  @Test
+  @DisplayName("should return all three equipment slots when pet dies")
+  void shouldReturnAllThreeEquipmentSlotsWhenPetDies() {
+    List<EquipmentItem> equippedItems = new ArrayList<>();
+    equippedItems.add(new EquipmentItem(
+        "item-1",
+        "SLOW_FEEDER",
+        EquipmentSlot.FOOD_BOWL,
+        Map.of(StatModifier.HUNGER_DECAY_RATE, -0.4)));
+    equippedItems.add(new EquipmentItem(
+        "item-2",
+        "TOY_BOX",
+        EquipmentSlot.TOY,
+        Map.of(StatModifier.HAPPINESS_DECAY_RATE, -0.3)));
+    equippedItems.add(new EquipmentItem(
+        "item-3",
+        "COZY_BED",
+        EquipmentSlot.ACCESSORY,
+        Map.of(StatModifier.HEALTH_REGEN, 0.02)));
+
+    fixture
+        .givenNoPriorActivity()
+        .whenPublishingA(new PetDiedEvent(PET_ID, 100, 1000, "Natural causes", equippedItems, NOW))
+        .expectActiveSagas(0)
+        .expectDispatchedCommandsMatching(
+            exactSequenceOf(
+                messageWithPayload(any(AddItemToInventoryCommand.class)),
+                messageWithPayload(any(AddItemToInventoryCommand.class)),
+                messageWithPayload(any(AddItemToInventoryCommand.class)),
+                andNoMore()));
   }
 }
