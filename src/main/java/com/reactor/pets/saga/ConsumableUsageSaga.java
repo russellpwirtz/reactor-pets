@@ -2,6 +2,7 @@ package com.reactor.pets.saga;
 
 import com.reactor.pets.command.RemoveConsumableCommand;
 import com.reactor.pets.command.UseConsumableCommand;
+import com.reactor.pets.event.ConsumableUseRequestedEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.modelling.saga.SagaEventHandler;
@@ -13,7 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 /**
  * Saga that coordinates consumable usage across aggregates.
  * Handles:
- * 1. Remove consumable from inventory
+ * 1. Validate and remove consumable from inventory
  * 2. Apply consumable effects to pet
  */
 @Saga
@@ -29,35 +30,42 @@ public class ConsumableUsageSaga {
   private String playerId;
 
   /**
-   * Handle consumable usage request.
-   * Step 1: Remove consumable from inventory (with validation)
-   * The UseConsumableCommand itself applies effects to pet
+   * Handle consumable use request event from Pet aggregate.
+   * Step 1: Remove consumable from inventory (validates quantity)
+   * Step 2: Apply consumable effects to pet
    */
   @StartSaga
   @SagaEventHandler(associationProperty = "petId")
-  public void handle(UseConsumableCommand command) {
-    log.debug("ConsumableUsageSaga: Starting consumable usage for pet {} - {}",
-        command.getPetId(), command.getConsumableType());
+  public void on(ConsumableUseRequestedEvent event) {
+    log.debug("ConsumableUsageSaga: Consumable use requested for pet {} - {}",
+        event.getPetId(), event.getConsumableType());
 
-    this.petId = command.getPetId();
-    this.playerId = command.getPlayerId();
+    this.petId = event.getPetId();
+    this.playerId = event.getPlayerId();
 
     try {
-      // Remove consumable from inventory first (this validates quantity)
+      // Step 1: Remove consumable from inventory (this validates quantity)
       log.debug("ConsumableUsageSaga: Removing {} from inventory",
-          command.getConsumableType());
+          event.getConsumableType());
       commandGateway.sendAndWait(
-          new RemoveConsumableCommand(INVENTORY_ID, command.getConsumableType(), 1));
+          new RemoveConsumableCommand(INVENTORY_ID, event.getConsumableType(), 1));
+
+      // Step 2: Apply consumable effects to pet
+      log.debug("ConsumableUsageSaga: Applying {} effects to pet {}",
+          event.getConsumableType(), event.getPetId());
+      commandGateway.sendAndWait(
+          new UseConsumableCommand(event.getPetId(), event.getConsumableType(), event.getPlayerId()));
 
       log.info("ConsumableUsageSaga: Successfully used {} on pet {}",
-          command.getConsumableType(), command.getPetId());
+          event.getConsumableType(), event.getPetId());
 
-      // End the saga after successful execution
-      SagaLifecycle.end();
     } catch (Exception e) {
       log.error("ConsumableUsageSaga: Failed to use consumable - {}", e.getMessage());
-      SagaLifecycle.end();
+      // TODO: Compensation - add consumable back if pet command failed after inventory removal
       throw e; // Re-throw to propagate the error
+    } finally {
+      // Always end the saga
+      SagaLifecycle.end();
     }
   }
 }

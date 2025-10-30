@@ -7,6 +7,9 @@ import com.reactor.pets.command.EvolvePetCommand;
 import com.reactor.pets.command.FeedPetCommand;
 import com.reactor.pets.command.MournPetCommand;
 import com.reactor.pets.command.PlayWithPetCommand;
+import com.reactor.pets.command.RequestEquipItemCommand;
+import com.reactor.pets.command.RequestUnequipItemCommand;
+import com.reactor.pets.command.RequestUseConsumableCommand;
 import com.reactor.pets.command.TimeTickCommand;
 import com.reactor.pets.command.UnequipItemCommand;
 import com.reactor.pets.command.UseConsumableCommand;
@@ -15,8 +18,11 @@ import com.reactor.pets.domain.ConsumableCatalog;
 import com.reactor.pets.domain.EquipmentItem;
 import com.reactor.pets.domain.EquipmentSlot;
 import com.reactor.pets.domain.StatModifier;
+import com.reactor.pets.event.ConsumableUseRequestedEvent;
 import com.reactor.pets.event.ConsumableUsedEvent;
+import com.reactor.pets.event.ItemEquipRequestedEvent;
 import com.reactor.pets.event.ItemEquippedEvent;
+import com.reactor.pets.event.ItemUnequipRequestedEvent;
 import com.reactor.pets.event.ItemUnequippedEvent;
 import com.reactor.pets.event.PetBecameSickEvent;
 import com.reactor.pets.event.PetCleanedEvent;
@@ -142,6 +148,31 @@ public class Pet {
     // Apply event
     AggregateLifecycle.apply(
         new PetCleanedEvent(command.getPetId(), healthIncrease, Instant.now()));
+  }
+
+  @CommandHandler
+  public void handle(RequestUseConsumableCommand command) {
+    // Validate pet state only - saga will validate inventory
+    if (!isAlive) {
+      throw new IllegalStateException("Cannot use consumable on dead pet");
+    }
+
+    if (command.getConsumableType() == null) {
+      throw new IllegalArgumentException("Consumable type cannot be null");
+    }
+
+    // Sick pets cannot use toys
+    if (this.isSick && command.getConsumableType() == com.reactor.pets.domain.ConsumableType.PREMIUM_TOY) {
+      throw new IllegalStateException("Sick pets cannot use toys");
+    }
+
+    // Emit request event (saga will validate inventory and apply effects)
+    AggregateLifecycle.apply(
+        new ConsumableUseRequestedEvent(
+            command.getPetId(),
+            command.getPlayerId(),
+            command.getConsumableType(),
+            Instant.now()));
   }
 
   @CommandHandler
@@ -458,6 +489,66 @@ public class Pet {
             this.petId,
             command.getDeceasedPetId(),
             command.getHappinessLoss(),
+            Instant.now()));
+  }
+
+  @CommandHandler
+  public void handle(RequestEquipItemCommand command) {
+    // Validate pet state
+    if (!isAlive) {
+      throw new IllegalStateException("Cannot equip items to dead pet");
+    }
+
+    if (command.getSlot() == null) {
+      throw new IllegalArgumentException("Equipment slot cannot be null");
+    }
+
+    // Validate that this is not an egg (eggs have 0 slots)
+    if (maxEquipmentSlots == 0) {
+      throw new IllegalStateException(
+          "Cannot equip items to pet in stage " + this.stage);
+    }
+
+    // Check if slot is already occupied and if we have room
+    int equippedCount = equippedItems.size();
+    boolean isReplacing = equippedItems.containsKey(command.getSlot());
+
+    if (!isReplacing && equippedCount >= maxEquipmentSlots) {
+      throw new IllegalStateException(
+          "Cannot equip more items. Pet has " + maxEquipmentSlots + " slots and " + equippedCount + " items equipped");
+    }
+
+    // Emit request event (saga will coordinate inventory check)
+    AggregateLifecycle.apply(
+        new ItemEquipRequestedEvent(
+            command.getPetId(),
+            command.getPlayerId(),
+            command.getItemId(),
+            command.getSlot(),
+            Instant.now()));
+  }
+
+  @CommandHandler
+  public void handle(RequestUnequipItemCommand command) {
+    // Validate pet state
+    if (!isAlive) {
+      throw new IllegalStateException("Cannot unequip items from dead pet");
+    }
+
+    if (command.getSlot() == null) {
+      throw new IllegalArgumentException("Equipment slot cannot be null");
+    }
+
+    if (!equippedItems.containsKey(command.getSlot())) {
+      throw new IllegalStateException("No item equipped in slot " + command.getSlot());
+    }
+
+    // Emit request event (saga will coordinate returning to inventory)
+    AggregateLifecycle.apply(
+        new ItemUnequipRequestedEvent(
+            command.getPetId(),
+            command.getPlayerId(),
+            command.getSlot(),
             Instant.now()));
   }
 

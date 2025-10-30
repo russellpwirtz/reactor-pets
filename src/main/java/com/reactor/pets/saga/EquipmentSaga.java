@@ -3,11 +3,11 @@ package com.reactor.pets.saga;
 import com.reactor.pets.command.AddItemToInventoryCommand;
 import com.reactor.pets.command.EquipItemCommand;
 import com.reactor.pets.command.RemoveItemFromInventoryCommand;
-import com.reactor.pets.command.RequestEquipItemCommand;
-import com.reactor.pets.command.RequestUnequipItemCommand;
 import com.reactor.pets.command.UnequipItemCommand;
 import com.reactor.pets.domain.EquipmentItem;
+import com.reactor.pets.event.ItemEquipRequestedEvent;
 import com.reactor.pets.event.ItemEquippedEvent;
+import com.reactor.pets.event.ItemUnequipRequestedEvent;
 import com.reactor.pets.event.ItemUnequippedEvent;
 import com.reactor.pets.query.GetInventoryItemQuery;
 import lombok.extern.slf4j.Slf4j;
@@ -41,23 +41,23 @@ public class EquipmentSaga {
   private EquipmentItem item;
 
   /**
-   * Handle request to equip an item to a pet.
+   * Handle item equip request event from Pet aggregate.
    * Step 1: Query the inventory for the item
    * Step 2: If found, remove from inventory
    * Step 3: Equip to pet
    */
   @StartSaga
   @SagaEventHandler(associationProperty = "petId")
-  public void handle(RequestEquipItemCommand command) {
-    log.debug("EquipmentSaga: Starting equip process for item {} on pet {}",
-        command.getItemId(), command.getPetId());
+  public void on(ItemEquipRequestedEvent event) {
+    log.debug("EquipmentSaga: Item equip requested for item {} on pet {}",
+        event.getItemId(), event.getPetId());
 
     // For single player mode, always use PLAYER_INVENTORY
     String inventoryId = "PLAYER_1_INVENTORY";
 
-    this.playerId = command.getPlayerId();
-    this.petId = command.getPetId();
-    this.itemId = command.getItemId();
+    this.playerId = event.getPlayerId();
+    this.petId = event.getPetId();
+    this.itemId = event.getItemId();
 
     // Associate saga with playerId as well
     SagaLifecycle.associateWith("playerId", playerId);
@@ -80,7 +80,7 @@ public class EquipmentSaga {
       commandGateway.sendAndWait(new RemoveItemFromInventoryCommand(inventoryId, itemId));
 
       // Equip item to pet
-      commandGateway.send(new EquipItemCommand(petId, item, command.getSlot()));
+      commandGateway.send(new EquipItemCommand(petId, item, event.getSlot()));
 
     } catch (Exception e) {
       log.error("EquipmentSaga: Error during equip process", e);
@@ -99,25 +99,25 @@ public class EquipmentSaga {
   }
 
   /**
-   * Handle request to unequip an item from a pet.
+   * Handle item unequip request event from Pet aggregate.
    * Step 1: Unequip from pet
    * Step 2: Add back to inventory
    */
   @StartSaga
   @SagaEventHandler(associationProperty = "petId")
-  public void handle(RequestUnequipItemCommand command) {
-    log.debug("EquipmentSaga: Starting unequip process for slot {} on pet {}",
-        command.getSlot(), command.getPetId());
+  public void on(ItemUnequipRequestedEvent event) {
+    log.debug("EquipmentSaga: Item unequip requested for slot {} on pet {}",
+        event.getSlot(), event.getPetId());
 
-    this.playerId = command.getPlayerId();
-    this.petId = command.getPetId();
+    this.playerId = event.getPlayerId();
+    this.petId = event.getPetId();
 
     // Associate saga with playerId as well
     SagaLifecycle.associateWith("playerId", playerId);
 
     try {
       // Unequip item from pet (this will trigger ItemUnequippedEvent)
-      commandGateway.send(new UnequipItemCommand(petId, command.getSlot()));
+      commandGateway.send(new UnequipItemCommand(petId, event.getSlot()));
     } catch (Exception e) {
       log.error("EquipmentSaga: Error during unequip process", e);
       SagaLifecycle.end();

@@ -11,5 +11,6 @@ import lombok.Value;
 public class UpgradePurchasedEvent {
   String playerId;
   UpgradeType upgradeType;
+  long xpSpent;
   Instant timestamp;
 }

@@ -2,9 +2,14 @@ package com.reactor.pets.aggregate;
 
 import com.reactor.pets.command.EarnXPCommand;
 import com.reactor.pets.command.InitializePlayerCommand;
+import com.reactor.pets.command.PurchaseEquipmentCommand;
 import com.reactor.pets.command.PurchaseUpgradeCommand;
 import com.reactor.pets.command.SpendXPCommand;
+import com.reactor.pets.domain.ItemDefinition;
+import com.reactor.pets.domain.ItemType;
+import com.reactor.pets.domain.ShopCatalog;
 import com.reactor.pets.domain.UpgradeType;
+import com.reactor.pets.event.EquipmentPurchasedEvent;
 import com.reactor.pets.event.PetCreatedForPlayerEvent;
 import com.reactor.pets.event.PlayerInitializedEvent;
 import com.reactor.pets.event.UpgradePurchasedEvent;
@@ -105,6 +110,34 @@ public class PlayerProgression {
   }
 
   @CommandHandler
+  public void handle(PurchaseEquipmentCommand command) {
+    // Validate item exists in catalog
+    ItemDefinition itemDef = ShopCatalog.getItem(command.getItemId())
+        .orElseThrow(() -> new IllegalArgumentException("Item not found: " + command.getItemId()));
+
+    // Validate it's equipment
+    if (itemDef.getItemType() != ItemType.EQUIPMENT) {
+      throw new IllegalArgumentException("Item is not equipment: " + command.getItemId());
+    }
+
+    // Validate XP balance
+    if (this.totalXP < itemDef.getXpCost()) {
+      throw new IllegalStateException(
+          String.format("Insufficient XP. Required: %d, Available: %d",
+              itemDef.getXpCost(), this.totalXP));
+    }
+
+    // Deduct XP and emit event
+    AggregateLifecycle.apply(
+        new EquipmentPurchasedEvent(
+            command.getPlayerId(),
+            command.getItemId(),
+            itemDef.getXpCost(),
+            itemDef.getName(),
+            Instant.now()));
+  }
+
+  @CommandHandler
   public void handle(PurchaseUpgradeCommand command) {
     // Business rules validation
     if (command.getUpgradeType() == null) {
@@ -128,11 +161,23 @@ public class PlayerProgression {
       }
     }
 
-    // Apply event
+    // Look up upgrade in catalog to get XP cost
+    ItemDefinition upgradeDef = ShopCatalog.getUpgrade(command.getUpgradeType())
+        .orElseThrow(() -> new IllegalArgumentException("Upgrade not found in shop: " + command.getUpgradeType()));
+
+    // Validate XP balance
+    if (this.totalXP < upgradeDef.getXpCost()) {
+      throw new IllegalStateException(
+          String.format("Insufficient XP. Required: %d, Available: %d",
+              upgradeDef.getXpCost(), this.totalXP));
+    }
+
+    // Apply event (XP deduction happens in event handler)
     AggregateLifecycle.apply(
         new UpgradePurchasedEvent(
             command.getPlayerId(),
             command.getUpgradeType(),
+            upgradeDef.getXpCost(),
             Instant.now()));
   }
 
@@ -158,6 +203,11 @@ public class PlayerProgression {
   }
 
   @EventSourcingHandler
+  public void on(EquipmentPurchasedEvent event) {
+    this.totalXP -= event.getXpSpent();
+  }
+
+  @EventSourcingHandler
   public void on(PetCreatedForPlayerEvent event) {
     this.totalPetsCreated = event.getTotalPetsCreated();
   }
@@ -168,6 +218,7 @@ public class PlayerProgression {
       this.permanentUpgrades = new HashSet<>();
     }
     this.permanentUpgrades.add(event.getUpgradeType());
+    this.totalXP -= event.getXpSpent();
   }
 
   /**

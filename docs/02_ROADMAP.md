@@ -53,6 +53,12 @@
 - Auto-action equipment (Auto-Feeder, Entertainment System)
 - ConsumableUsageSaga for inventory coordination
 - Integrated consumables into shop system
+- **Saga Architecture Refactoring** ✅ (2025-10-29)
+  - Fixed all 3 sagas to follow proper event-driven architecture
+  - ShopPurchaseSaga, EquipmentSaga, ConsumableUsageSaga now listen to events instead of handling commands
+  - Aggregates properly handle commands and emit events
+  - Cross-aggregate coordination via sagas
+  - All 185 tests passing
 
 ---
 
