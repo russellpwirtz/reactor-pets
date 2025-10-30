@@ -257,6 +257,8 @@
             <exclude>**/api/controller/*.class</exclude>
             <exclude>**/command/*.class</exclude>
             <exclude>**/event/*.class</exclude>
+            <exclude>**/brain/model/*.class</exclude>
+            <exclude>**/brain/config/*.class</exclude>
           </excludes>
         </configuration>
         <executions>

@@ -30,6 +30,16 @@ axon:
         mode: tracking
         batch-size: 10
 
+brain:
+  simulation:
+    firing-threshold: 1.5
+    refractory-period: 5
+    decay-factor: 0.95
+    input-leakage: 0.1
+    base-weight: 1.0
+    paused: false
+    shutdown-grace-period-ms: 30000  # 30 seconds before stopping
+
 logging:
   level:
     org.axonframework: INFO
