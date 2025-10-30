@@ -279,15 +279,25 @@ public class PetBrainSimulator {
                 petId,
                 subscriberCounts.get(petId).get());
 
+        // Get current state snapshot to emit immediately for new subscribers
+        List<CellState> currentSnapshot =
+                grid.getAllCells().stream()
+                        .map(Cell::getCurrentState)
+                        .collect(Collectors.toList());
+
         // Merge all cell state updates from all cells in the grid
         List<Flux<CellState>> cellFluxes =
                 grid.getAllCells().stream()
                         .map(Cell::getStateUpdates)
                         .collect(Collectors.toList());
 
-        return Flux.merge(cellFluxes)
-                .buffer(Duration.ofMillis(50)) // Batch updates every 50ms
-                .filter(list -> !list.isEmpty())
+        return Flux.concat(
+                        // First, emit current state snapshot immediately
+                        Flux.just(currentSnapshot),
+                        // Then stream ongoing updates
+                        Flux.merge(cellFluxes)
+                                .buffer(Duration.ofMillis(50)) // Batch updates every 50ms
+                                .filter(list -> !list.isEmpty()))
                 .doFinally(
                         signalType -> {
                             // Client disconnected - decrement subscriber count
