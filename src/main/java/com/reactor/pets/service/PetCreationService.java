@@ -1,14 +1,19 @@
 package com.reactor.pets.service;
 
+import com.reactor.pets.aggregate.GlobalTimeAggregate;
 import com.reactor.pets.aggregate.PetType;
+import com.reactor.pets.command.CreateGlobalTimeCommand;
 import com.reactor.pets.command.CreatePetCommand;
 import com.reactor.pets.command.SpendXPCommand;
+import com.reactor.pets.query.GetGlobalTimeQuery;
 import com.reactor.pets.query.GetPlayerProgressionQuery;
+import com.reactor.pets.query.GlobalTimeView;
 import com.reactor.pets.query.PlayerProgressionView;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
 import org.springframework.stereotype.Service;
 
@@ -38,45 +43,68 @@ public class PetCreationService {
    * @throws IllegalStateException if player has insufficient XP
    */
   public CompletableFuture<String> createPetWithCost(String petId, String name, PetType type) {
+    // First, get the current global tick
     return queryGateway
-        .query(new GetPlayerProgressionQuery(PLAYER_ID), PlayerProgressionView.class)
-        .thenCompose(progression -> {
-          int totalPetsCreated = (progression != null) ? progression.getTotalPetsCreated() : 0;
-
-          // Calculate cost
-          long xpCost = calculatePetCost(totalPetsCreated);
-
-          log.info("Creating pet #{}: {} ({}) - Cost: {} XP",
-              totalPetsCreated + 1, name, type, xpCost);
-
-          // If cost > 0, spend XP first
-          if (xpCost > 0) {
-            if (progression == null || progression.getTotalXP() < xpCost) {
-              CompletableFuture<String> future = new CompletableFuture<>();
-              future.completeExceptionally(new IllegalStateException(
-                  String.format("Insufficient XP to create pet. Required: %d, Available: %d",
-                      xpCost, (progression != null) ? progression.getTotalXP() : 0)));
-              return future;
-            }
-
-            String purpose = String.format("Create pet #%d: %s", totalPetsCreated + 1, name);
-
-            // Spend XP first (synchronously), then create pet
+        .query(new GetGlobalTimeQuery(), ResponseTypes.instanceOf(GlobalTimeView.class))
+        .thenCompose(globalTime -> {
+          // Ensure GlobalTime exists, create if needed
+          long currentGlobalTick;
+          if (globalTime == null) {
+            log.info("GlobalTime not found, creating it...");
             try {
-              commandGateway.sendAndWait(new SpendXPCommand(PLAYER_ID, xpCost, purpose));
-              return commandGateway.send(new CreatePetCommand(petId, name, type))
-                  .thenApply(result -> petId);
+              commandGateway.sendAndWait(new CreateGlobalTimeCommand(GlobalTimeAggregate.GLOBAL_TIME_ID));
+              currentGlobalTick = 0L;
             } catch (Exception e) {
               CompletableFuture<String> future = new CompletableFuture<>();
-              future.completeExceptionally(e);
+              future.completeExceptionally(new IllegalStateException("Failed to initialize GlobalTime", e));
               return future;
             }
           } else {
-            // FREE pet, create directly
-            return commandGateway
-                .send(new CreatePetCommand(petId, name, type))
-                .thenApply(result -> petId);
+            currentGlobalTick = globalTime.getCurrentGlobalTick();
           }
+
+          final long birthGlobalTick = currentGlobalTick;
+
+          return queryGateway
+              .query(new GetPlayerProgressionQuery(PLAYER_ID), PlayerProgressionView.class)
+              .thenCompose(progression -> {
+                int totalPetsCreated = (progression != null) ? progression.getTotalPetsCreated() : 0;
+
+                // Calculate cost
+                long xpCost = calculatePetCost(totalPetsCreated);
+
+                log.info("Creating pet #{}: {} ({}) at global tick {} - Cost: {} XP",
+                    totalPetsCreated + 1, name, type, birthGlobalTick, xpCost);
+
+                // If cost > 0, spend XP first
+                if (xpCost > 0) {
+                  if (progression == null || progression.getTotalXP() < xpCost) {
+                    CompletableFuture<String> future = new CompletableFuture<>();
+                    future.completeExceptionally(new IllegalStateException(
+                        String.format("Insufficient XP to create pet. Required: %d, Available: %d",
+                            xpCost, (progression != null) ? progression.getTotalXP() : 0)));
+                    return future;
+                  }
+
+                  String purpose = String.format("Create pet #%d: %s", totalPetsCreated + 1, name);
+
+                  // Spend XP first (synchronously), then create pet
+                  try {
+                    commandGateway.sendAndWait(new SpendXPCommand(PLAYER_ID, xpCost, purpose));
+                    return commandGateway.send(new CreatePetCommand(petId, name, type, birthGlobalTick))
+                        .thenApply(result -> petId);
+                  } catch (Exception e) {
+                    CompletableFuture<String> future = new CompletableFuture<>();
+                    future.completeExceptionally(e);
+                    return future;
+                  }
+                } else {
+                  // FREE pet, create directly
+                  return commandGateway
+                      .send(new CreatePetCommand(petId, name, type, birthGlobalTick))
+                      .thenApply(result -> petId);
+                }
+              });
         });
   }
 

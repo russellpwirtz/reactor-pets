@@ -35,11 +35,17 @@ public class PetStatusResponse {
   @Schema(description = "Whether the pet is alive", example = "true")
   private boolean isAlive;
 
-  @Schema(description = "Age of the pet in ticks", example = "25")
+  @Schema(description = "Age of the pet in units (1 unit = 10 ticks)", example = "25")
   private int age;
 
-  @Schema(description = "Total ticks the pet has experienced", example = "50")
-  private int totalTicks;
+  @Schema(description = "Local age: ticks since this pet was born", example = "250")
+  private long localAge;
+
+  @Schema(description = "Global tick when this pet was created", example = "1000")
+  private long birthGlobalTick;
+
+  @Schema(description = "Current global tick", example = "1250")
+  private long currentGlobalTick;
 
   @Schema(description = "XP multiplier for this pet", example = "1.5")
   private double xpMultiplier;

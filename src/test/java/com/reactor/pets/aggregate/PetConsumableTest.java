@@ -30,7 +30,7 @@ class PetConsumableTest {
   @DisplayName("should use food consumable to restore hunger")
   void shouldUseFoodConsumable() {
     fixture
-        .given(new PetCreatedEvent(PET_ID, "Fluffy", PetType.DOG, null))
+        .given(new PetCreatedEvent(PET_ID, "Fluffy", PetType.DOG, 0L, null))
         .when(new UseConsumableCommand(PET_ID, ConsumableType.APPLE, PLAYER_ID))
         .expectSuccessfulHandlerExecution()
         .expectEventsMatching(
@@ -43,7 +43,7 @@ class PetConsumableTest {
   @DisplayName("should calculate hunger restoration correctly")
   void shouldCalculateHungerRestoration() {
     fixture
-        .given(new PetCreatedEvent(PET_ID, "Fluffy", PetType.DOG, null))
+        .given(new PetCreatedEvent(PET_ID, "Fluffy", PetType.DOG, 0L, null))
         .when(new UseConsumableCommand(PET_ID, ConsumableType.APPLE, PLAYER_ID))
         .expectSuccessfulHandlerExecution();
   }
@@ -52,7 +52,7 @@ class PetConsumableTest {
   @DisplayName("should use treat consumable to restore happiness")
   void shouldUseTreatConsumable() {
     fixture
-        .given(new PetCreatedEvent(PET_ID, "Fluffy", PetType.DOG, null))
+        .given(new PetCreatedEvent(PET_ID, "Fluffy", PetType.DOG, 0L, null))
         .when(new UseConsumableCommand(PET_ID, ConsumableType.COOKIE, PLAYER_ID))
         .expectSuccessfulHandlerExecution();
   }
@@ -61,7 +61,7 @@ class PetConsumableTest {
   @DisplayName("should use medicine to restore health")
   void shouldUseMedicineToRestoreHealth() {
     fixture
-        .given(new PetCreatedEvent(PET_ID, "Fluffy", PetType.DOG, null))
+        .given(new PetCreatedEvent(PET_ID, "Fluffy", PetType.DOG, 0L, null))
         .when(new UseConsumableCommand(PET_ID, ConsumableType.BASIC_MEDICINE, PLAYER_ID))
         .expectSuccessfulHandlerExecution();
   }
@@ -71,7 +71,7 @@ class PetConsumableTest {
   void shouldCureSicknessWithAdvancedMedicine() {
     fixture
         .given(
-            new PetCreatedEvent(PET_ID, "Fluffy", PetType.DOG, null),
+            new PetCreatedEvent(PET_ID, "Fluffy", PetType.DOG, 0L, null),
             new PetBecameSickEvent(PET_ID, null))
         .when(new UseConsumableCommand(PET_ID, ConsumableType.ADVANCED_MEDICINE, PLAYER_ID))
         .expectSuccessfulHandlerExecution();
@@ -82,7 +82,7 @@ class PetConsumableTest {
   void shouldNotCureWithBasicMedicine() {
     fixture
         .given(
-            new PetCreatedEvent(PET_ID, "Fluffy", PetType.DOG, null),
+            new PetCreatedEvent(PET_ID, "Fluffy", PetType.DOG, 0L, null),
             new PetBecameSickEvent(PET_ID, null))
         .when(new UseConsumableCommand(PET_ID, ConsumableType.BASIC_MEDICINE, PLAYER_ID))
         .expectSuccessfulHandlerExecution();
@@ -96,7 +96,7 @@ class PetConsumableTest {
   @DisplayName("should reject consumable with null type")
   void shouldRejectConsumableWithNullType() {
     fixture
-        .given(new PetCreatedEvent(PET_ID, "Fluffy", PetType.DOG, null))
+        .given(new PetCreatedEvent(PET_ID, "Fluffy", PetType.DOG, 0L, null))
         .when(new UseConsumableCommand(PET_ID, null, PLAYER_ID))
         .expectException(IllegalArgumentException.class)
         .expectExceptionMessage("Consumable type cannot be null");
@@ -110,7 +110,7 @@ class PetConsumableTest {
   @DisplayName("should use premium toy with multiple effects")
   void shouldUsePremiumToyWithMultipleEffects() {
     fixture
-        .given(new PetCreatedEvent(PET_ID, "Fluffy", PetType.DOG, null))
+        .given(new PetCreatedEvent(PET_ID, "Fluffy", PetType.DOG, 0L, null))
         .when(new UseConsumableCommand(PET_ID, ConsumableType.PREMIUM_TOY, PLAYER_ID))
         .expectSuccessfulHandlerExecution();
   }

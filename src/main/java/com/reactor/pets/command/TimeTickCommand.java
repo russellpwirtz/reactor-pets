@@ -7,5 +7,5 @@ import org.axonframework.modelling.command.TargetAggregateIdentifier;
 public class TimeTickCommand {
   @TargetAggregateIdentifier
   String petId;
-  long tickCount;
+  long globalTick;
 }

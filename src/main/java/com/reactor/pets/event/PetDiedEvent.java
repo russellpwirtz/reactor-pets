@@ -9,7 +9,7 @@ import lombok.Value;
 public class PetDiedEvent {
   String petId;
   int finalAge;
-  int totalTicks;
+  long localAge; // Ticks since pet was born
   String causeOfDeath;
   List<EquipmentItem> equippedItems; // Items that were equipped when pet died
   Instant timestamp;

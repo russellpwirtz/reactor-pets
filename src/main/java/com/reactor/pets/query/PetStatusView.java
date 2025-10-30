@@ -40,9 +40,15 @@ public class PetStatusView {
   private EvolutionPath evolutionPath;
   private boolean isAlive;
   private int age;
-  private int totalTicks;
+  private long birthGlobalTick;
+  private long currentGlobalTick;
   private double xpMultiplier;
   private Instant lastUpdated;
+
+  // Derived field: local age (ticks since birth)
+  public long getLocalAge() {
+    return currentGlobalTick - birthGlobalTick;
+  }
 
   @Column(name = "equipped_items", columnDefinition = "TEXT")
   @JdbcTypeCode(SqlTypes.JSON)

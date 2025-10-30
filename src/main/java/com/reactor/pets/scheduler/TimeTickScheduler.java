@@ -1,13 +1,16 @@
 package com.reactor.pets.scheduler;
 
+import com.reactor.pets.aggregate.GlobalTimeAggregate;
+import com.reactor.pets.command.AdvanceGlobalTimeCommand;
+import com.reactor.pets.command.CreateGlobalTimeCommand;
 import com.reactor.pets.command.TimeTickCommand;
 import com.reactor.pets.query.GetAlivePetsQuery;
-import com.reactor.pets.query.GetAllPetsQuery;
+import com.reactor.pets.query.GetGlobalTimeQuery;
+import com.reactor.pets.query.GlobalTimeView;
 import com.reactor.pets.query.PetStatusView;
 import jakarta.annotation.PreDestroy;
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -29,31 +32,23 @@ public class TimeTickScheduler {
 
   private final CommandGateway commandGateway;
   private final QueryGateway queryGateway;
-  private final AtomicLong tickCounter = new AtomicLong(0);
   private Disposable subscription;
 
   @EventListener(ApplicationReadyEvent.class)
   public void startTimeFlow() {
     log.info("Starting reactive time flow scheduler (tick every 10 seconds)");
 
-    // Initialize tick counter from existing pets to handle restarts
-    // This now runs after all Axon handlers are registered
-    initializeTickCounter();
+    // Initialize or get GlobalTimeAggregate
+    initializeGlobalTime();
 
     subscription =
         Flux.interval(Duration.ofSeconds(10), Duration.ofSeconds(10))
-            .doOnNext(
-                tick -> {
-                  // Increment tick counter once per cycle for all pets
-                  long currentTick = tickCounter.incrementAndGet();
-                  log.info(
-                      "*** Time tick #{} triggered (previous tick was #{})",
-                      currentTick, currentTick - 1);
-                })
-            .flatMap(tick -> queryForAlivePets())
-            .flatMap(
-                this::sendTimeTick,
-                8) // Concurrency: process up to 8 pets in parallel for better throughput
+            .flatMap(tick -> advanceGlobalTime())
+            .flatMap(currentTick ->
+                queryForAlivePets()
+                    .flatMap(
+                        pet -> sendTimeTick(pet, currentTick),
+                        8)) // Concurrency: process up to 8 pets in parallel for better throughput
             .doOnError(
                 error ->
                     log.error("Error in time tick processing: {}", error.getMessage(), error))
@@ -91,17 +86,15 @@ public class TimeTickScheduler {
         .flatMapIterable(pets -> pets);
   }
 
-  private Mono<String> sendTimeTick(PetStatusView pet) {
-    // Use the current tick value (already incremented once per cycle)
-    long currentTick = tickCounter.get();
+  private Mono<String> sendTimeTick(PetStatusView pet, long currentTick) {
     TimeTickCommand command = new TimeTickCommand(pet.getPetId(), currentTick);
 
     log.info(
-        "*** Sending tick #{} to pet: {} (name: {}, lastTick: {})",
+        "*** Sending tick #{} to pet: {} (name: {}, currentGlobalTick: {})",
         currentTick,
         pet.getPetId(),
         pet.getName(),
-        pet.getTotalTicks());
+        pet.getCurrentGlobalTick());
 
     return Mono.fromFuture(commandGateway.send(command))
         .thenReturn(pet.getPetId())
@@ -131,28 +124,52 @@ public class TimeTickScheduler {
             });
   }
 
-  private void initializeTickCounter() {
+  private void initializeGlobalTime() {
     try {
-      log.info("*** Attempting to initialize tick counter from existing pets...");
-      List<PetStatusView> allPets =
+      log.info("*** Checking for GlobalTime aggregate...");
+      GlobalTimeView globalTime =
           queryGateway
-              .query(
-                  new GetAllPetsQuery(),
-                  ResponseTypes.multipleInstancesOf(PetStatusView.class))
+              .query(new GetGlobalTimeQuery(), ResponseTypes.instanceOf(GlobalTimeView.class))
               .join();
 
-      log.info("*** Found {} pets total", allPets.size());
-
-      long maxTicks =
-          allPets.stream()
-              .mapToLong(PetStatusView::getTotalTicks)
-              .max()
-              .orElse(0L);
-
-      tickCounter.set(maxTicks);
-      log.info("*** Initialized tick counter to {} based on existing pets", maxTicks);
+      if (globalTime == null) {
+        log.info("*** GlobalTime aggregate not found, creating it...");
+        commandGateway
+            .sendAndWait(new CreateGlobalTimeCommand(GlobalTimeAggregate.GLOBAL_TIME_ID));
+        log.info("*** GlobalTime aggregate created successfully");
+      } else {
+        log.info(
+            "*** GlobalTime aggregate found at tick {}", globalTime.getCurrentGlobalTick());
+      }
     } catch (Exception e) {
-      log.warn("*** Failed to initialize tick counter from existing pets, starting from 0", e);
+      log.warn("*** Failed to initialize GlobalTime, will retry on first tick", e);
     }
+  }
+
+  private Mono<Long> advanceGlobalTime() {
+    return Mono.fromCallable(
+            () -> {
+              // Send command to advance global time
+              commandGateway
+                  .sendAndWait(new AdvanceGlobalTimeCommand(GlobalTimeAggregate.GLOBAL_TIME_ID));
+
+              // Query for the new global tick value
+              GlobalTimeView globalTime =
+                  queryGateway
+                      .query(
+                          new GetGlobalTimeQuery(), ResponseTypes.instanceOf(GlobalTimeView.class))
+                      .join();
+
+              long currentTick = globalTime.getCurrentGlobalTick();
+              log.info(
+                  "*** Time tick #{} triggered (previous tick was #{})",
+                  currentTick, currentTick - 1);
+              return currentTick;
+            })
+        .onErrorResume(
+            error -> {
+              log.error("Failed to advance global time: {}", error.getMessage(), error);
+              return Mono.error(error);
+            });
   }
 }

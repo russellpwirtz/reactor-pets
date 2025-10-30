@@ -10,12 +10,15 @@ import static org.mockito.Mockito.when;
 import com.reactor.pets.aggregate.PetType;
 import com.reactor.pets.command.CreatePetCommand;
 import com.reactor.pets.command.SpendXPCommand;
+import com.reactor.pets.query.GetGlobalTimeQuery;
 import com.reactor.pets.query.GetPlayerProgressionQuery;
+import com.reactor.pets.query.GlobalTimeView;
 import com.reactor.pets.query.PlayerProgressionView;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.concurrent.CompletableFuture;
 import org.axonframework.commandhandling.gateway.CommandGateway;
+import org.axonframework.messaging.responsetypes.ResponseTypes;
 import org.axonframework.queryhandling.QueryGateway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -48,6 +51,7 @@ class PetCreationServiceTest {
   private static final PetType PET_TYPE = PetType.CAT;
 
   private PlayerProgressionView progressionView;
+  private GlobalTimeView globalTimeView;
 
   @BeforeEach
   void setUp() {
@@ -59,12 +63,19 @@ class PetCreationServiceTest {
         0, // prestigeLevel
         Instant.now(),
         new HashSet<>());
+
+    globalTimeView = new GlobalTimeView();
+    globalTimeView.setTimeId("GLOBAL_TIME");
+    globalTimeView.setCurrentGlobalTick(100L);
+    globalTimeView.setLastUpdated(Instant.now());
   }
 
   @Test
   @DisplayName("should create first pet for free")
   void shouldCreateFirstPetForFree() {
     // Given: Player with 0 pets created
+    when(queryGateway.query(any(GetGlobalTimeQuery.class), eq(ResponseTypes.instanceOf(GlobalTimeView.class))))
+        .thenReturn(CompletableFuture.completedFuture(globalTimeView));
     when(queryGateway.query(any(GetPlayerProgressionQuery.class), eq(PlayerProgressionView.class)))
         .thenReturn(CompletableFuture.completedFuture(progressionView));
     when(commandGateway.send(any())).thenReturn(CompletableFuture.completedFuture(null));
@@ -93,6 +104,8 @@ class PetCreationServiceTest {
     // Given: Player with 1 pet created and 200 XP
     progressionView.setTotalPetsCreated(1);
 
+    when(queryGateway.query(any(GetGlobalTimeQuery.class), eq(ResponseTypes.instanceOf(GlobalTimeView.class))))
+        .thenReturn(CompletableFuture.completedFuture(globalTimeView));
     when(queryGateway.query(any(GetPlayerProgressionQuery.class), eq(PlayerProgressionView.class)))
         .thenReturn(CompletableFuture.completedFuture(progressionView));
     when(commandGateway.sendAndWait(any())).thenReturn(null);
@@ -121,6 +134,8 @@ class PetCreationServiceTest {
     // Given: Player with 2 pets created
     progressionView.setTotalPetsCreated(2);
 
+    when(queryGateway.query(any(GetGlobalTimeQuery.class), eq(ResponseTypes.instanceOf(GlobalTimeView.class))))
+        .thenReturn(CompletableFuture.completedFuture(globalTimeView));
     when(queryGateway.query(any(GetPlayerProgressionQuery.class), eq(PlayerProgressionView.class)))
         .thenReturn(CompletableFuture.completedFuture(progressionView));
     when(commandGateway.sendAndWait(any())).thenReturn(null);
@@ -143,6 +158,8 @@ class PetCreationServiceTest {
     // Given: Player with 3 pets created
     progressionView.setTotalPetsCreated(3);
 
+    when(queryGateway.query(any(GetGlobalTimeQuery.class), eq(ResponseTypes.instanceOf(GlobalTimeView.class))))
+        .thenReturn(CompletableFuture.completedFuture(globalTimeView));
     when(queryGateway.query(any(GetPlayerProgressionQuery.class), eq(PlayerProgressionView.class)))
         .thenReturn(CompletableFuture.completedFuture(progressionView));
     when(commandGateway.sendAndWait(any())).thenReturn(null);
@@ -166,6 +183,8 @@ class PetCreationServiceTest {
     progressionView.setTotalPetsCreated(1);
     progressionView.setTotalXP(40L);
 
+    when(queryGateway.query(any(GetGlobalTimeQuery.class), eq(ResponseTypes.instanceOf(GlobalTimeView.class))))
+        .thenReturn(CompletableFuture.completedFuture(globalTimeView));
     when(queryGateway.query(any(GetPlayerProgressionQuery.class), eq(PlayerProgressionView.class)))
         .thenReturn(CompletableFuture.completedFuture(progressionView));
 
@@ -188,6 +207,8 @@ class PetCreationServiceTest {
     progressionView.setTotalPetsCreated(2);
     progressionView.setTotalXP(90L);
 
+    when(queryGateway.query(any(GetGlobalTimeQuery.class), eq(ResponseTypes.instanceOf(GlobalTimeView.class))))
+        .thenReturn(CompletableFuture.completedFuture(globalTimeView));
     when(queryGateway.query(any(GetPlayerProgressionQuery.class), eq(PlayerProgressionView.class)))
         .thenReturn(CompletableFuture.completedFuture(progressionView));
 
@@ -249,6 +270,8 @@ class PetCreationServiceTest {
   @DisplayName("should handle null progression view gracefully")
   void shouldHandleNullProgressionViewGracefully() {
     // Given: No player progression exists
+    when(queryGateway.query(any(GetGlobalTimeQuery.class), eq(ResponseTypes.instanceOf(GlobalTimeView.class))))
+        .thenReturn(CompletableFuture.completedFuture(globalTimeView));
     when(queryGateway.query(any(GetPlayerProgressionQuery.class), eq(PlayerProgressionView.class)))
         .thenReturn(CompletableFuture.completedFuture(null));
     when(commandGateway.send(any())).thenReturn(CompletableFuture.completedFuture(null));

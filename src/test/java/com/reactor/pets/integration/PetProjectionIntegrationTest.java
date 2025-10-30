@@ -54,7 +54,7 @@ class PetProjectionIntegrationTest {
     void shouldPlayWithPetAndUpdateHappinessAndHunger() throws Exception {
       // Given: A created pet
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "Playful Pet", PetType.DOG));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "Playful Pet", PetType.DOG, 0L));
       TimeUnit.MILLISECONDS.sleep(500);
 
       // When: Play with the pet
@@ -76,7 +76,7 @@ class PetProjectionIntegrationTest {
     void shouldHandleMultiplePlaySessions() throws Exception {
       // Given: A created pet
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "Very Playful Pet", PetType.CAT));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "Very Playful Pet", PetType.CAT, 0L));
       TimeUnit.MILLISECONDS.sleep(500);
 
       // When: Play twice (initial happiness is 70, each play adds 15, so 70+15+15=100)
@@ -99,7 +99,7 @@ class PetProjectionIntegrationTest {
     void shouldCapHappinessAt100() throws Exception {
       // Given: A created pet
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "Maximum Happy Pet", PetType.DRAGON));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "Maximum Happy Pet", PetType.DRAGON, 0L));
       TimeUnit.MILLISECONDS.sleep(500);
 
       // When: Play twice to reach max happiness (70 + 15 + 15 = 100)
@@ -131,7 +131,7 @@ class PetProjectionIntegrationTest {
     void shouldCleanPetAndIncreaseHealth() throws Exception {
       // Given: A created pet with less than perfect health
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "Dirty Pet", PetType.CAT));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "Dirty Pet", PetType.CAT, 0L));
       TimeUnit.MILLISECONDS.sleep(500);
 
       // When: Clean the pet
@@ -153,7 +153,7 @@ class PetProjectionIntegrationTest {
     void shouldHandleMultipleCleaningSessions() throws Exception {
       // Given: A created pet
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "Very Clean Pet", PetType.DOG));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "Very Clean Pet", PetType.DOG, 0L));
       TimeUnit.MILLISECONDS.sleep(500);
 
       // When: Clean multiple times
@@ -186,9 +186,9 @@ class PetProjectionIntegrationTest {
       String petId2 = UUID.randomUUID().toString();
       String petId3 = UUID.randomUUID().toString();
 
-      commandGateway.sendAndWait(new CreatePetCommand(petId1, "Pet One", PetType.DOG));
-      commandGateway.sendAndWait(new CreatePetCommand(petId2, "Pet Two", PetType.CAT));
-      commandGateway.sendAndWait(new CreatePetCommand(petId3, "Pet Three", PetType.DRAGON));
+      commandGateway.sendAndWait(new CreatePetCommand(petId1, "Pet One", PetType.DOG, 0L));
+      commandGateway.sendAndWait(new CreatePetCommand(petId2, "Pet Two", PetType.CAT, 0L));
+      commandGateway.sendAndWait(new CreatePetCommand(petId3, "Pet Three", PetType.DRAGON, 0L));
       TimeUnit.MILLISECONDS.sleep(1000);
 
       // When: Query all pets
@@ -214,7 +214,7 @@ class PetProjectionIntegrationTest {
       String petName = "Attribute Test Pet";
       PetType petType = PetType.DRAGON;
 
-      commandGateway.sendAndWait(new CreatePetCommand(petId, petName, petType));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, petName, petType, 0L));
       TimeUnit.MILLISECONDS.sleep(500);
 
       // When: Query all pets
@@ -243,7 +243,7 @@ class PetProjectionIntegrationTest {
     void shouldReturnPetCreationEventInHistory() throws Exception {
       // Given: A newly created pet
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "History Pet", PetType.CAT));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "History Pet", PetType.CAT, 0L));
       TimeUnit.MILLISECONDS.sleep(500);
 
       // When: Query pet history
@@ -269,7 +269,7 @@ class PetProjectionIntegrationTest {
     void shouldReturnMultipleEventsInChronologicalOrder() throws Exception {
       // Given: A pet with multiple events
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "Event Test Pet", PetType.DOG));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "Event Test Pet", PetType.DOG, 0L));
       TimeUnit.MILLISECONDS.sleep(300);
       commandGateway.sendAndWait(new FeedPetCommand(petId, 10));
       TimeUnit.MILLISECONDS.sleep(300);
@@ -304,7 +304,7 @@ class PetProjectionIntegrationTest {
     void shouldRespectLimitParameter() throws Exception {
       // Given: A pet with many events
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "Limited History Pet", PetType.CAT));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "Limited History Pet", PetType.CAT, 0L));
       TimeUnit.MILLISECONDS.sleep(300);
 
       // Create several events
@@ -332,7 +332,7 @@ class PetProjectionIntegrationTest {
     void shouldHandleLargeLimitGracefully() throws Exception {
       // Given: A pet with a few events
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "Large Limit Pet", PetType.DRAGON));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "Large Limit Pet", PetType.DRAGON, 0L));
       TimeUnit.MILLISECONDS.sleep(300);
       commandGateway.sendAndWait(new FeedPetCommand(petId, 5));
       TimeUnit.MILLISECONDS.sleep(300);
@@ -355,7 +355,7 @@ class PetProjectionIntegrationTest {
     void shouldIncludeAllEventTypesInDetails() throws Exception {
       // Given: A pet with all event types
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "All Events Pet", PetType.DOG));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "All Events Pet", PetType.DOG, 0L));
       TimeUnit.MILLISECONDS.sleep(300);
       commandGateway.sendAndWait(new FeedPetCommand(petId, 10));
       TimeUnit.MILLISECONDS.sleep(300);
@@ -397,7 +397,7 @@ class PetProjectionIntegrationTest {
       PetType petType = PetType.CAT;
 
       // When: Execute complete lifecycle
-      commandGateway.sendAndWait(new CreatePetCommand(petId, petName, petType));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, petName, petType, 0L));
       TimeUnit.MILLISECONDS.sleep(300);
       commandGateway.sendAndWait(new FeedPetCommand(petId, 10));
       TimeUnit.MILLISECONDS.sleep(300);

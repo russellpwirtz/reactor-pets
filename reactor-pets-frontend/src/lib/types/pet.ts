@@ -11,7 +11,9 @@ export interface Pet {
   evolutionPath: EvolutionPath;
   alive: boolean;
   age: number;
-  totalTicks: number;
+  localAge: number; // Ticks since pet was born
+  birthGlobalTick: number; // Global tick when pet was created
+  currentGlobalTick: number; // Current global tick
   hunger: number;
   happiness: number;
   health: number;

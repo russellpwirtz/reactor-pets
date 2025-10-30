@@ -56,7 +56,7 @@ class PetLifecycleIntegrationTest {
       PetType petType = PetType.DOG;
 
       // When: Dispatch CreatePetCommand
-      commandGateway.sendAndWait(new CreatePetCommand(petId, petName, petType));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, petName, petType, 0L));
 
       // Allow time for event processing and projection update
       TimeUnit.MILLISECONDS.sleep(500);
@@ -86,8 +86,8 @@ class PetLifecycleIntegrationTest {
       String petId2 = UUID.randomUUID().toString();
 
       // When: Create two different pets
-      commandGateway.sendAndWait(new CreatePetCommand(petId1, "Dog Pet", PetType.DOG));
-      commandGateway.sendAndWait(new CreatePetCommand(petId2, "Cat Pet", PetType.CAT));
+      commandGateway.sendAndWait(new CreatePetCommand(petId1, "Dog Pet", PetType.DOG, 0L));
+      commandGateway.sendAndWait(new CreatePetCommand(petId2, "Cat Pet", PetType.CAT, 0L));
 
       TimeUnit.MILLISECONDS.sleep(500);
 
@@ -135,7 +135,7 @@ class PetLifecycleIntegrationTest {
     void shouldFeedPetAndReduceHungerInProjection() throws Exception {
       // Given: A created pet
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "Hungry Pet", PetType.CAT));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "Hungry Pet", PetType.CAT, 0L));
       TimeUnit.MILLISECONDS.sleep(500);
 
       // When: Feed the pet
@@ -156,7 +156,7 @@ class PetLifecycleIntegrationTest {
     void shouldHandleMultipleFeedingsCorrectly() throws Exception {
       // Given: A created pet
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "Very Hungry Pet", PetType.DRAGON));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "Very Hungry Pet", PetType.DRAGON, 0L));
       TimeUnit.MILLISECONDS.sleep(500);
 
       // When: Feed multiple times
@@ -181,7 +181,7 @@ class PetLifecycleIntegrationTest {
     void shouldNotReduceHungerBelowZero() throws Exception {
       // Given: A created pet
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "Overfed Pet", PetType.DOG));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "Overfed Pet", PetType.DOG, 0L));
       TimeUnit.MILLISECONDS.sleep(500);
 
       // When: Feed with more food than hunger level
@@ -207,7 +207,7 @@ class PetLifecycleIntegrationTest {
     void shouldReconstructAggregateStateFromEvents() throws Exception {
       // Given: Create a pet and perform multiple actions
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "Event Sourced Pet", PetType.CAT));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "Event Sourced Pet", PetType.CAT, 0L));
       TimeUnit.MILLISECONDS.sleep(300);
 
       commandGateway.sendAndWait(new FeedPetCommand(petId, 5));
@@ -242,7 +242,7 @@ class PetLifecycleIntegrationTest {
       assertThatThrownBy(
               () ->
                   commandGateway.sendAndWait(
-                      new CreatePetCommand(UUID.randomUUID().toString(), "", PetType.DOG)))
+                      new CreatePetCommand(UUID.randomUUID().toString(), "", PetType.DOG, 0L)))
           .hasMessageContaining("Pet name cannot be empty");
     }
 
@@ -253,7 +253,7 @@ class PetLifecycleIntegrationTest {
       assertThatThrownBy(
               () ->
                   commandGateway.sendAndWait(
-                      new CreatePetCommand(UUID.randomUUID().toString(), "Invalid Pet", null)))
+                      new CreatePetCommand(UUID.randomUUID().toString(), "Invalid Pet", null, 0L)))
           .hasMessageContaining("Pet type cannot be null");
     }
 
@@ -262,7 +262,7 @@ class PetLifecycleIntegrationTest {
     void shouldRejectInvalidFoodAmount() throws Exception {
       // Given: A created pet
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "Test Pet", PetType.DOG));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "Test Pet", PetType.DOG, 0L));
       TimeUnit.MILLISECONDS.sleep(500);
 
       // When/Then: Zero or negative food should be rejected
@@ -282,7 +282,7 @@ class PetLifecycleIntegrationTest {
     @DisplayName("should create and manage DOG pet")
     void shouldCreateAndManageDogPet() throws Exception {
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "Buddy", PetType.DOG));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "Buddy", PetType.DOG, 0L));
       TimeUnit.MILLISECONDS.sleep(500);
 
       PetStatusView status =
@@ -297,7 +297,7 @@ class PetLifecycleIntegrationTest {
     @DisplayName("should create and manage CAT pet")
     void shouldCreateAndManageCatPet() throws Exception {
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "Whiskers", PetType.CAT));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "Whiskers", PetType.CAT, 0L));
       TimeUnit.MILLISECONDS.sleep(500);
 
       PetStatusView status =
@@ -312,7 +312,7 @@ class PetLifecycleIntegrationTest {
     @DisplayName("should create and manage DRAGON pet")
     void shouldCreateAndManageDragonPet() throws Exception {
       String petId = UUID.randomUUID().toString();
-      commandGateway.sendAndWait(new CreatePetCommand(petId, "Smaug", PetType.DRAGON));
+      commandGateway.sendAndWait(new CreatePetCommand(petId, "Smaug", PetType.DRAGON, 0L));
       TimeUnit.MILLISECONDS.sleep(500);
 
       PetStatusView status =

@@ -51,14 +51,15 @@ public class PetStatusProjection {
     view.setEvolutionPath(EvolutionPath.UNDETERMINED);
     view.setAlive(true);
     view.setAge(0);
-    view.setTotalTicks(0);
+    view.setBirthGlobalTick(event.getBirthGlobalTick());
+    view.setCurrentGlobalTick(event.getBirthGlobalTick());
     view.setXpMultiplier(1.0);
     view.setEquippedItems(new HashMap<>());
     view.setMaxEquipmentSlots(0); // Eggs have no equipment slots
     view.setLastUpdated(event.getTimestamp());
 
     petStatusRepository.save(view);
-    log.info("Pet created: {} ({})", event.getName(), event.getType());
+    log.info("Pet created: {} ({}) at global tick {}", event.getName(), event.getType(), event.getBirthGlobalTick());
   }
 
   @EventHandler
@@ -185,15 +186,16 @@ public class PetStatusProjection {
               view.setHunger(newHunger);
               view.setHappiness(newHappiness);
               view.setAge(view.getAge() + event.getAgeIncrease());
-              view.setTotalTicks(view.getTotalTicks() + 1);
+              view.setCurrentGlobalTick(event.getGlobalTick());
               view.setXpMultiplier(event.getNewXpMultiplier());
               view.setLastUpdated(event.getTimestamp());
               petStatusRepository.save(view);
               log.info(
-                  "*** Time passed for pet {}. Age: {}, Ticks: {}, Hunger: {}, Happiness: {}",
+                  "*** Time passed for pet {}. Age: {}, LocalAge: {}, GlobalTick: {}, Hunger: {}, Happiness: {}",
                   view.getName(),
                   view.getAge(),
-                  view.getTotalTicks(),
+                  view.getLocalAge(),
+                  view.getCurrentGlobalTick(),
                   newHunger,
                   newHappiness);
             });
@@ -234,10 +236,10 @@ public class PetStatusProjection {
               view.setLastUpdated(event.getTimestamp());
               petStatusRepository.save(view);
               log.error(
-                  "Pet {} has died at age {}. Total ticks: {}. Cause: {}",
+                  "Pet {} has died at age {}. Local age: {}. Cause: {}",
                   view.getName(),
                   event.getFinalAge(),
-                  event.getTotalTicks(),
+                  event.getLocalAge(),
                   event.getCauseOfDeath());
             });
   }

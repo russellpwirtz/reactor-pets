@@ -42,7 +42,7 @@ class PetEvolutionSagaTest {
   void shouldStartSagaOnPetCreatedEvent() {
     fixture
         .givenNoPriorActivity()
-        .whenPublishingA(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, NOW))
+        .whenPublishingA(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         .expectActiveSagas(1)
         .expectNoDispatchedCommands();
   }
@@ -51,7 +51,7 @@ class PetEvolutionSagaTest {
   @DisplayName("should track age on TimePassedEvent")
   void shouldTrackAgeOnTimePassedEvent() {
     fixture
-        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, NOW))
+        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         .whenPublishingA(new TimePassedEvent(PET_ID, 3, 2, 1, 1L, 0.0, 0.0, NOW))
         .expectActiveSagas(1)
         .expectNoDispatchedCommands(); // Age 1 is not enough to evolve from EGG
@@ -61,7 +61,7 @@ class PetEvolutionSagaTest {
   @DisplayName("should evolve from EGG to BABY at age 5")
   void shouldEvolveFromEggToBabyAtAge5() {
     fixture
-        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, NOW))
+        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         // Age pet to 5
         .whenPublishingA(new TimePassedEvent(PET_ID, 15, 10, 5, 5L, 0.0, 0.0, NOW))
         .expectActiveSagas(1)
@@ -73,7 +73,7 @@ class PetEvolutionSagaTest {
   @DisplayName("should evolve from BABY to TEEN at age 20")
   void shouldEvolveFromBabyToTeenAtAge20() {
     fixture
-        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, NOW))
+        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         // Evolve to BABY first
         .andThenAPublished(new TimePassedEvent(PET_ID, 15, 10, 5, 5L, 0.0, 0.0, NOW))
         .andThenAPublished(
@@ -91,7 +91,7 @@ class PetEvolutionSagaTest {
   void shouldEvolveFromTeenToAdultAtAge50WithGoodCare() {
     // Setup: Create pet, evolve to BABY, then TEEN
     fixture
-        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, NOW))
+        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         .andThenAPublished(new TimePassedEvent(PET_ID, 15, 10, 5, 5L, 0.0, 0.0, NOW))
         .andThenAPublished(
             new PetEvolvedEvent(
@@ -117,7 +117,7 @@ class PetEvolutionSagaTest {
   @DisplayName("should update stats on PetFedEvent")
   void shouldUpdateStatsOnPetFedEvent() {
     fixture
-        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, NOW))
+        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         .whenPublishingA(new PetFedEvent(PET_ID, 15, NOW))
         .expectActiveSagas(1)
         .expectNoDispatchedCommands();
@@ -127,7 +127,7 @@ class PetEvolutionSagaTest {
   @DisplayName("should update stats on PetPlayedWithEvent")
   void shouldUpdateStatsOnPetPlayedWithEvent() {
     fixture
-        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, NOW))
+        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         .whenPublishingA(new PetPlayedWithEvent(PET_ID, 10, 5, NOW))
         .expectActiveSagas(1)
         .expectNoDispatchedCommands();
@@ -137,7 +137,7 @@ class PetEvolutionSagaTest {
   @DisplayName("should update stats on PetCleanedEvent")
   void shouldUpdateStatsOnPetCleanedEvent() {
     fixture
-        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, NOW))
+        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         .whenPublishingA(new PetCleanedEvent(PET_ID, 10, NOW))
         .expectActiveSagas(1)
         .expectNoDispatchedCommands();
@@ -147,7 +147,7 @@ class PetEvolutionSagaTest {
   @DisplayName("should update stats on PetHealthDeterioratedEvent")
   void shouldUpdateStatsOnPetHealthDeterioratedEvent() {
     fixture
-        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, NOW))
+        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         .whenPublishingA(new PetHealthDeterioratedEvent(PET_ID, 20, "Starvation", NOW))
         .expectActiveSagas(1)
         .expectNoDispatchedCommands();
@@ -157,7 +157,7 @@ class PetEvolutionSagaTest {
   @DisplayName("should update stage on PetEvolvedEvent")
   void shouldUpdateStageOnPetEvolvedEvent() {
     fixture
-        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, NOW))
+        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         .whenPublishingA(
             new PetEvolvedEvent(
                 PET_ID, PetStage.EGG, PetStage.BABY, EvolutionPath.HEALTHY, "Hatched", NOW))
@@ -169,7 +169,7 @@ class PetEvolutionSagaTest {
   @DisplayName("should end saga on PetDiedEvent")
   void shouldEndSagaOnPetDiedEvent() {
     fixture
-        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, NOW))
+        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         .whenPublishingA(new PetDiedEvent(PET_ID, 10, 100, "Neglect", new ArrayList<>(), NOW))
         .expectActiveSagas(0); // Saga should end
   }
@@ -178,7 +178,7 @@ class PetEvolutionSagaTest {
   @DisplayName("should not evolve at ADULT stage")
   void shouldNotEvolveAtAdultStage() {
     fixture
-        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, NOW))
+        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         .andThenAPublished(
             new PetEvolvedEvent(
                 PET_ID, PetStage.EGG, PetStage.BABY, EvolutionPath.HEALTHY, "Hatched", NOW))
@@ -198,7 +198,7 @@ class PetEvolutionSagaTest {
   @DisplayName("should determine HEALTHY evolution path with good care")
   void shouldDetermineHealthyEvolutionPathWithGoodCare() {
     fixture
-        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, NOW))
+        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         // Keep pet healthy and happy
         .andThenAPublished(new PetCleanedEvent(PET_ID, 20, NOW)) // Health boost
         .andThenAPublished(new PetPlayedWithEvent(PET_ID, 20, 5, NOW)) // Happiness boost
@@ -217,7 +217,7 @@ class PetEvolutionSagaTest {
   @DisplayName("should determine NEGLECTED evolution path with poor care")
   void shouldDetermineNeglectedEvolutionPathWithPoorCare() {
     fixture
-        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, NOW))
+        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         // Neglect the pet - let health and happiness degrade
         .andThenAPublished(new PetHealthDeterioratedEvent(PET_ID, 40, "Hunger", NOW)) // Health to 60
         .andThenAPublished(new TimePassedEvent(PET_ID, 3, 5, 1, 1L, 0.0, 0.0, NOW)) // Happiness drops
@@ -237,7 +237,7 @@ class PetEvolutionSagaTest {
   @DisplayName("should not evolve BABY to TEEN before age 20")
   void shouldNotEvolveBabyToTeenBeforeAge20() {
     fixture
-        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, NOW))
+        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         .andThenAPublished(new TimePassedEvent(PET_ID, 15, 10, 5, 5L, 0.0, 0.0, NOW))
         .andThenAPublished(
             new PetEvolvedEvent(
@@ -252,7 +252,7 @@ class PetEvolutionSagaTest {
   @DisplayName("should not evolve TEEN to ADULT before age 50")
   void shouldNotEvolveTeenToAdultBeforeAge50() {
     fixture
-        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, NOW))
+        .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         .andThenAPublished(new TimePassedEvent(PET_ID, 15, 10, 5, 5L, 0.0, 0.0, NOW))
         .andThenAPublished(
             new PetEvolvedEvent(

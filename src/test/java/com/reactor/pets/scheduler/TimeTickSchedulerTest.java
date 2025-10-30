@@ -54,7 +54,7 @@ class TimeTickSchedulerTest {
     commandGateway
         .sendAndWait(
             new CreatePetCommand(
-                petId, "Time Test Pet", com.reactor.pets.aggregate.PetType.DOG));
+                petId, "Time Test Pet", com.reactor.pets.aggregate.PetType.DOG, 0L));
 
     // Get initial status
     PetStatusView initialStatus =
@@ -62,7 +62,7 @@ class TimeTickSchedulerTest {
 
     assertThat(initialStatus.getHunger()).isEqualTo(30);
     assertThat(initialStatus.getHappiness()).isEqualTo(70);
-    assertThat(initialStatus.getTotalTicks()).isEqualTo(0);
+    assertThat(initialStatus.getLocalAge()).isEqualTo(0);
 
     // Wait for at least one tick with retry logic
     // Tick interval is 10 seconds, so wait up to 15 seconds with polling
@@ -75,14 +75,14 @@ class TimeTickSchedulerTest {
       afterTickStatus =
           queryGateway.query(new GetPetStatusQuery(petId), PetStatusView.class).join();
 
-      if (afterTickStatus.getTotalTicks() > 0) {
+      if (afterTickStatus.getLocalAge() > 0) {
         break; // Time tick processed!
       }
     }
 
     // Verify stats have degraded
     assertThat(afterTickStatus).isNotNull();
-    assertThat(afterTickStatus.getTotalTicks()).isGreaterThan(0);
+    assertThat(afterTickStatus.getLocalAge()).isGreaterThan(0);
     assertThat(afterTickStatus.getHunger()).isGreaterThan(initialStatus.getHunger());
     assertThat(afterTickStatus.getHappiness()).isLessThan(initialStatus.getHappiness());
   }

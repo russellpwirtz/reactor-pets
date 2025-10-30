@@ -48,7 +48,7 @@ class PetStatisticsProjectionTest {
     // Given
     when(statisticsRepository.findById("GLOBAL")).thenReturn(Optional.of(mockStats));
     PetCreatedEvent event =
-        new PetCreatedEvent("pet-1", "Fluffy", PetType.CAT, Instant.now());
+        new PetCreatedEvent("pet-1", "Fluffy", PetType.CAT, 0L, Instant.now());
 
     // When
     projection.on(event);
@@ -163,7 +163,7 @@ class PetStatisticsProjectionTest {
     when(statisticsRepository.findById("GLOBAL")).thenReturn(Optional.empty());
     when(statisticsRepository.save(any(PetStatistics.class))).thenAnswer(i -> i.getArgument(0));
     PetCreatedEvent event =
-        new PetCreatedEvent("pet-1", "Fluffy", PetType.CAT, Instant.now());
+        new PetCreatedEvent("pet-1", "Fluffy", PetType.CAT, 0L, Instant.now());
 
     // When
     projection.on(event);

@@ -55,7 +55,9 @@ export function PetDetailView({ pet }: PetDetailViewProps) {
             <div><strong>Stage:</strong> {pet.stage}</div>
             <div><strong>Evolution Path:</strong> {pet.evolutionPath}</div>
             <div><strong>Age:</strong> {pet.age} days</div>
-            <div><strong>Total Ticks:</strong> {pet.totalTicks}</div>
+            <div><strong>Local Age:</strong> {pet.localAge} ticks</div>
+            <div><strong>Birth Tick:</strong> {pet.birthGlobalTick}</div>
+            <div><strong>Current Global Tick:</strong> {pet.currentGlobalTick}</div>
             <div><strong>Status:</strong> {pet.alive ? 'Alive' : 'Deceased'}</div>
             <div><strong>Last Updated:</strong> {new Date(pet.lastUpdated).toLocaleString()}</div>
           </div>

@@ -60,8 +60,9 @@ public class Pet {
   private PetStage stage;
   private EvolutionPath evolutionPath;
   private boolean isAlive;
-  private int age; // Age in units (every 10 ticks = 1 age)
-  private int totalTicks; // Total time ticks elapsed
+  private int age; // Age in units (every 10 local age ticks = 1 age)
+  private long birthGlobalTick; // The global tick when this pet was created
+  private long currentGlobalTick; // The last global tick this pet processed
   private long lastTickSequence; // Last processed tick sequence (for idempotency)
   private double xpMultiplier; // Multiplier for XP earned from/by this pet (starts at 1.0)
 
@@ -72,6 +73,11 @@ public class Pet {
   // Sickness system fields
   private boolean isSick; // Whether the pet is currently sick
   private int lowHealthTicks; // Number of consecutive ticks with health < 30
+
+  // Helper method to get local age (pet's age in ticks since birth)
+  public long getLocalAge() {
+    return currentGlobalTick - birthGlobalTick;
+  }
 
   @CommandHandler
   public Pet(CreatePetCommand command) {
@@ -86,7 +92,11 @@ public class Pet {
     // Apply event
     AggregateLifecycle.apply(
         new PetCreatedEvent(
-            command.getPetId(), command.getName(), command.getType(), Instant.now()));
+            command.getPetId(),
+            command.getName(),
+            command.getType(),
+            command.getBirthGlobalTick(),
+            Instant.now()));
   }
 
   @CommandHandler
@@ -259,7 +269,8 @@ public class Pet {
     this.evolutionPath = EvolutionPath.UNDETERMINED;
     this.isAlive = true;
     this.age = 0;
-    this.totalTicks = 0;
+    this.birthGlobalTick = event.getBirthGlobalTick();
+    this.currentGlobalTick = event.getBirthGlobalTick(); // Start at birth tick
     this.lastTickSequence = -1;
     this.xpMultiplier = 1.0; // Start with 1.0x multiplier
     this.equippedItems = new HashMap<>();
@@ -336,8 +347,8 @@ public class Pet {
     System.out.println(
         "*** TimeTickCommand received for pet: "
             + command.getPetId()
-            + ", tick: "
-            + command.getTickCount()
+            + ", globalTick: "
+            + command.getGlobalTick()
             + ", alive: "
             + isAlive
             + ", lastTick: "
@@ -350,10 +361,10 @@ public class Pet {
     }
 
     // Idempotency check: ignore if we've already processed this tick
-    if (command.getTickCount() <= lastTickSequence) {
+    if (command.getGlobalTick() <= lastTickSequence) {
       System.out.println(
-          "*** Duplicate tick detected, ignoring (tick: "
-              + command.getTickCount()
+          "*** Duplicate tick detected, ignoring (globalTick: "
+              + command.getGlobalTick()
               + " <= lastTick: "
               + lastTickSequence
               + ")");
@@ -388,13 +399,16 @@ public class Pet {
     int hungerIncrease = Math.min(baseHungerIncrease, 100 - this.hunger);
     int happinessDecrease = Math.min(baseHappinessDecrease, this.happiness);
 
-    // Every 10 ticks = 1 age unit
-    int ageIncrease = ((totalTicks + 1) % 10 == 0) ? 1 : 0;
+    // Calculate local age after this tick (will be incremented)
+    long nextLocalAge = getLocalAge() + 1;
+
+    // Every 10 ticks of local age = 1 age unit
+    int ageIncrease = (nextLocalAge % 10 == 0) ? 1 : 0;
 
     // Calculate XP multiplier change
-    // Increases by +0.1x every 50 ticks
+    // Increases by +0.1x every 50 ticks of local age
     double xpMultiplierChange = 0.0;
-    if ((totalTicks + 1) % 50 == 0) {
+    if (nextLocalAge % 50 == 0) {
       xpMultiplierChange = 0.1;
     }
 
@@ -415,7 +429,7 @@ public class Pet {
             hungerIncrease,
             happinessDecrease,
             ageIncrease,
-            command.getTickCount(),
+            command.getGlobalTick(),
             xpMultiplierChange,
             newXpMultiplier,
             Instant.now()));
@@ -468,7 +482,7 @@ public class Pet {
           new PetDiedEvent(
               command.getPetId(),
               this.age + ageIncrease,
-              this.totalTicks + 1,
+              getLocalAge(),
               "Health reached zero: " + deteriorationReason,
               equippedItemsList,
               Instant.now()));
@@ -480,8 +494,8 @@ public class Pet {
     this.hunger = Math.min(100, this.hunger + event.getHungerIncrease());
     this.happiness = Math.max(0, this.happiness - event.getHappinessDecrease());
     this.age += event.getAgeIncrease();
-    this.totalTicks++;
-    this.lastTickSequence = event.getTickCount();
+    this.currentGlobalTick = event.getGlobalTick();
+    this.lastTickSequence = event.getGlobalTick();
     this.xpMultiplier = event.getNewXpMultiplier();
   }
 

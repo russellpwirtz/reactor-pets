@@ -45,7 +45,7 @@ class PetLifecycleSmokeTest {
     PetType petType = PetType.DOG;
 
     // When: Dispatch CreatePetCommand
-    commandGateway.sendAndWait(new CreatePetCommand(petId, petName, petType));
+    commandGateway.sendAndWait(new CreatePetCommand(petId, petName, petType, 0L));
 
     // Allow time for event processing (events typically process in <10ms)
     TimeUnit.MILLISECONDS.sleep(50);
@@ -72,7 +72,7 @@ class PetLifecycleSmokeTest {
   void shouldFeedPetAndReduceHunger() throws Exception {
     // Given: A created pet
     String petId = UUID.randomUUID().toString();
-    commandGateway.sendAndWait(new CreatePetCommand(petId, "Hungry Pet", PetType.CAT));
+    commandGateway.sendAndWait(new CreatePetCommand(petId, "Hungry Pet", PetType.CAT, 0L));
     TimeUnit.MILLISECONDS.sleep(50);
 
     // When: Feed the pet
@@ -93,7 +93,7 @@ class PetLifecycleSmokeTest {
   void shouldHandleAllPetTypes() throws Exception {
     // Test DOG
     String dogId = UUID.randomUUID().toString();
-    commandGateway.sendAndWait(new CreatePetCommand(dogId, "Dog", PetType.DOG));
+    commandGateway.sendAndWait(new CreatePetCommand(dogId, "Dog", PetType.DOG, 0L));
     TimeUnit.MILLISECONDS.sleep(50);
 
     PetStatusView dogStatus =
@@ -104,7 +104,7 @@ class PetLifecycleSmokeTest {
 
     // Test CAT
     String catId = UUID.randomUUID().toString();
-    commandGateway.sendAndWait(new CreatePetCommand(catId, "Cat", PetType.CAT));
+    commandGateway.sendAndWait(new CreatePetCommand(catId, "Cat", PetType.CAT, 0L));
     TimeUnit.MILLISECONDS.sleep(50);
 
     PetStatusView catStatus =
@@ -115,7 +115,7 @@ class PetLifecycleSmokeTest {
 
     // Test DRAGON
     String dragonId = UUID.randomUUID().toString();
-    commandGateway.sendAndWait(new CreatePetCommand(dragonId, "Dragon", PetType.DRAGON));
+    commandGateway.sendAndWait(new CreatePetCommand(dragonId, "Dragon", PetType.DRAGON, 0L));
     TimeUnit.MILLISECONDS.sleep(50);
 
     PetStatusView dragonStatus =

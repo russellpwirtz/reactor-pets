@@ -45,10 +45,11 @@ class PetAggregateTest {
       String petId = "pet-123";
       String name = "Fluffy";
       PetType type = PetType.CAT;
+      long birthGlobalTick = 0L;
 
       fixture
           .givenNoPriorActivity()
-          .when(new CreatePetCommand(petId, name, type))
+          .when(new CreatePetCommand(petId, name, type, birthGlobalTick))
           .expectSuccessfulHandlerExecution()
           .expectEventsMatching(
               matches(
@@ -64,6 +65,7 @@ class PetAggregateTest {
                     return event.getPetId().equals(petId)
                         && event.getName().equals(name)
                         && event.getType().equals(type)
+                        && event.getBirthGlobalTick() == birthGlobalTick
                         && event.getTimestamp() != null;
                   }));
     }
@@ -73,7 +75,7 @@ class PetAggregateTest {
     void shouldRejectCreationWithNullName() {
       fixture
           .givenNoPriorActivity()
-          .when(new CreatePetCommand("pet-123", null, PetType.DOG))
+          .when(new CreatePetCommand("pet-123", null, PetType.DOG, 0L))
           .expectException(IllegalArgumentException.class)
           .expectExceptionMessage("Pet name cannot be empty");
     }
@@ -83,7 +85,7 @@ class PetAggregateTest {
     void shouldRejectCreationWithEmptyName() {
       fixture
           .givenNoPriorActivity()
-          .when(new CreatePetCommand("pet-123", "  ", PetType.DOG))
+          .when(new CreatePetCommand("pet-123", "  ", PetType.DOG, 0L))
           .expectException(IllegalArgumentException.class)
           .expectExceptionMessage("Pet name cannot be empty");
     }
@@ -93,7 +95,7 @@ class PetAggregateTest {
     void shouldRejectCreationWithNullType() {
       fixture
           .givenNoPriorActivity()
-          .when(new CreatePetCommand("pet-123", "Rex", null))
+          .when(new CreatePetCommand("pet-123", "Rex", null, 0L))
           .expectException(IllegalArgumentException.class)
           .expectExceptionMessage("Pet type cannot be null");
     }
@@ -109,7 +111,7 @@ class PetAggregateTest {
       String petId = "pet-123";
 
       fixture
-          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()))
+          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()))
           .when(new FeedPetCommand(petId, 20))
           .expectSuccessfulHandlerExecution()
           .expectEventsMatching(
@@ -135,7 +137,7 @@ class PetAggregateTest {
       String petId = "pet-123";
 
       fixture
-          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()))
+          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()))
           .when(new FeedPetCommand(petId, 100)) // More than initial hunger of 30
           .expectSuccessfulHandlerExecution()
           .expectEventsMatching(
@@ -160,7 +162,7 @@ class PetAggregateTest {
       String petId = "pet-123";
 
       fixture
-          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()))
+          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()))
           .when(new FeedPetCommand(petId, 0))
           .expectException(IllegalArgumentException.class)
           .expectExceptionMessage("Food amount must be positive");
@@ -172,7 +174,7 @@ class PetAggregateTest {
       String petId = "pet-123";
 
       fixture
-          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()))
+          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()))
           .when(new FeedPetCommand(petId, -10))
           .expectException(IllegalArgumentException.class)
           .expectExceptionMessage("Food amount must be positive");
@@ -191,7 +193,7 @@ class PetAggregateTest {
       // This test verifies the event sourcing handler sets correct initial state
       // We feed with amount > initial hunger to verify the initial hunger is 30
       fixture
-          .given(new PetCreatedEvent(petId, "Max", PetType.DRAGON, Instant.now()))
+          .given(new PetCreatedEvent(petId, "Max", PetType.DRAGON, 0L, Instant.now()))
           .when(new FeedPetCommand(petId, 50))
           .expectSuccessfulHandlerExecution()
           .expectEventsMatching(
@@ -217,7 +219,7 @@ class PetAggregateTest {
 
       fixture
           .given(
-              new PetCreatedEvent(petId, "Max", PetType.DRAGON, Instant.now()),
+              new PetCreatedEvent(petId, "Max", PetType.DRAGON, 0L, Instant.now()),
               new PetFedEvent(petId, 10, Instant.now()))
           .when(new FeedPetCommand(petId, 25))
           .expectSuccessfulHandlerExecution()
@@ -248,7 +250,7 @@ class PetAggregateTest {
     void shouldCreateDogPet() {
       fixture
           .givenNoPriorActivity()
-          .when(new CreatePetCommand("pet-1", "Rex", PetType.DOG))
+          .when(new CreatePetCommand("pet-1", "Rex", PetType.DOG, 0L))
           .expectSuccessfulHandlerExecution()
           .expectEventsMatching(
               matches(
@@ -268,7 +270,7 @@ class PetAggregateTest {
     void shouldCreateCatPet() {
       fixture
           .givenNoPriorActivity()
-          .when(new CreatePetCommand("pet-2", "Whiskers", PetType.CAT))
+          .when(new CreatePetCommand("pet-2", "Whiskers", PetType.CAT, 0L))
           .expectSuccessfulHandlerExecution()
           .expectEventsMatching(
               matches(
@@ -288,7 +290,7 @@ class PetAggregateTest {
     void shouldCreateDragonPet() {
       fixture
           .givenNoPriorActivity()
-          .when(new CreatePetCommand("pet-3", "Smaug", PetType.DRAGON))
+          .when(new CreatePetCommand("pet-3", "Smaug", PetType.DRAGON, 0L))
           .expectSuccessfulHandlerExecution()
           .expectEventsMatching(
               matches(
@@ -314,7 +316,7 @@ class PetAggregateTest {
       String petId = "pet-123";
 
       fixture
-          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()))
+          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()))
           .when(new PlayWithPetCommand(petId))
           .expectSuccessfulHandlerExecution()
           .expectEventsMatching(
@@ -342,7 +344,7 @@ class PetAggregateTest {
 
       // Happiness starts at 70, so we can increase by at most 30
       fixture
-          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()))
+          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()))
           .when(new PlayWithPetCommand(petId))
           .expectSuccessfulHandlerExecution()
           .expectEventsMatching(
@@ -369,7 +371,7 @@ class PetAggregateTest {
       // Create pet and play multiple times to reach 100 happiness
       fixture
           .given(
-              new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
+              new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()),
               new PetPlayedWithEvent(petId, 15, 5, Instant.now()),
               new PetPlayedWithEvent(petId, 15, 5, Instant.now()))
           .when(new PlayWithPetCommand(petId))
@@ -389,7 +391,7 @@ class PetAggregateTest {
       String petId = "pet-123";
 
       fixture
-          .given(new PetCreatedEvent(petId, "Fluffy", PetType.CAT, Instant.now()))
+          .given(new PetCreatedEvent(petId, "Fluffy", PetType.CAT, 0L, Instant.now()))
           .when(new CleanPetCommand(petId))
           .expectSuccessfulHandlerExecution()
           .expectEventsMatching(

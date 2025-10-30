@@ -9,5 +9,6 @@ public class PetCreatedEvent {
   String petId;
   String name;
   PetType type;
+  long birthGlobalTick;
   Instant timestamp;
 }

@@ -46,7 +46,7 @@ class PetTimeSystemTest {
       String petId = "pet-123";
 
       fixture
-          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()))
+          .given(new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()))
           .when(new TimeTickCommand(petId, 1))
           .expectSuccessfulHandlerExecution()
           .expectEventsMatching(
@@ -67,7 +67,7 @@ class PetTimeSystemTest {
                         && event.getHungerIncrease() == 3
                         && event.getHappinessDecrease() == 2
                         && event.getAgeIncrease() == 0
-                        && event.getTickCount() == 1;
+                        && event.getGlobalTick() == 1;
                   }));
     }
 
@@ -79,7 +79,7 @@ class PetTimeSystemTest {
       // Create 9 TimePassedEvents to reach tick 9
       fixture
           .given(
-              new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
+              new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()),
               new TimePassedEvent(petId, 3, 2, 0, 1, 0.0, 0.0, Instant.now()),
               new TimePassedEvent(petId, 3, 2, 0, 2, 0.0, 0.0, Instant.now()),
               new TimePassedEvent(petId, 3, 2, 0, 3, 0.0, 0.0, Instant.now()),
@@ -103,7 +103,7 @@ class PetTimeSystemTest {
                       return false;
                     }
                     // On the 10th tick, age should increase by 1
-                    return event.getAgeIncrease() == 1 && event.getTickCount() == 10;
+                    return event.getAgeIncrease() == 1 && event.getGlobalTick() == 10;
                   }));
     }
 
@@ -114,7 +114,7 @@ class PetTimeSystemTest {
 
       fixture
           .given(
-              new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
+              new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()),
               new TimePassedEvent(petId, 3, 2, 0, 5, 0.0, 0.0, Instant.now()))
           .when(new TimeTickCommand(petId, 5))
           .expectSuccessfulHandlerExecution()
@@ -128,7 +128,7 @@ class PetTimeSystemTest {
 
       fixture
           .given(
-              new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
+              new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()),
               new TimePassedEvent(petId, 3, 2, 0, 10, 0.0, 0.0, Instant.now()))
           .when(new TimeTickCommand(petId, 5))
           .expectSuccessfulHandlerExecution()
@@ -143,7 +143,7 @@ class PetTimeSystemTest {
       // Set hunger to 98 by applying events
       fixture
           .given(
-              new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
+              new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()),
               // Initial hunger is 30, need to get to 98
               // Play increases hunger by 5 each time
               new PetPlayedWithEvent(petId, 15, 5, Instant.now()),
@@ -194,7 +194,7 @@ class PetTimeSystemTest {
 
       fixture
           .given(
-              new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
+              new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()),
               // Happiness starts at 70
               // Decrease by 2 per tick - need 35 ticks to reach 0
               new TimePassedEvent(petId, 3, 2, 0, 1, 0.0, 0.0, Instant.now()),
@@ -264,7 +264,7 @@ class PetTimeSystemTest {
       // Get hunger above 80
       fixture
           .given(
-              new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
+              new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()),
               // Start at 30, need to get to 81
               // Play increases hunger by 5 each time
               new PetPlayedWithEvent(petId, 15, 5, Instant.now()),
@@ -321,7 +321,7 @@ class PetTimeSystemTest {
       // Strategy: feed the pet regularly to keep hunger low while time passes
       fixture
           .given(
-              new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
+              new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()),
               // Happiness starts at 70, decrease by 2 per tick
               // Need (70-19)/2 = 25.5, so 26 ticks to get to 18
               // But we need to keep hunger below 80
@@ -389,7 +389,7 @@ class PetTimeSystemTest {
       // Get hunger above 80 AND happiness below 20
       fixture
           .given(
-              new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
+              new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()),
               // Start at hunger 30, happiness 70
               // After 26 ticks: hunger = 30 + 26*3 = 108 (capped at 100), happiness = 70 - 26*2 = 18
               new PetPlayedWithEvent(petId, 15, 5, Instant.now()),
@@ -469,7 +469,7 @@ class PetTimeSystemTest {
       // Set up pet with very low health (1) and high hunger
       fixture
           .given(
-              new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
+              new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()),
               // Get hunger high enough to cause health deterioration
               new PetPlayedWithEvent(petId, 15, 5, Instant.now()),
               new PetPlayedWithEvent(petId, 10, 5, Instant.now()),
@@ -536,7 +536,7 @@ class PetTimeSystemTest {
 
       fixture
           .given(
-              new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
+              new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()),
               new PetDiedEvent(petId, 5, 50, "Health reached zero", new ArrayList<>(), Instant.now()))
           .when(new TimeTickCommand(petId, 51))
           .expectSuccessfulHandlerExecution()
@@ -550,7 +550,7 @@ class PetTimeSystemTest {
 
       fixture
           .given(
-              new PetCreatedEvent(petId, "Buddy", PetType.DOG, Instant.now()),
+              new PetCreatedEvent(petId, "Buddy", PetType.DOG, 0L, Instant.now()),
               new PetDiedEvent(petId, 5, 50, "Health reached zero", new ArrayList<>(), Instant.now()))
           .when(new FeedPetCommand(petId, 20))
           .expectException(IllegalStateException.class)

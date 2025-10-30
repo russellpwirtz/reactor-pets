@@ -78,7 +78,7 @@ class PetStatusProjectionTest {
       String petId = "pet-123";
       String petName = "Fluffy";
       PetType petType = PetType.CAT;
-      PetCreatedEvent event = new PetCreatedEvent(petId, petName, petType, Instant.now());
+      PetCreatedEvent event = new PetCreatedEvent(petId, petName, petType, 0L, Instant.now());
 
       // When
       projection.on(event);
@@ -100,9 +100,9 @@ class PetStatusProjectionTest {
     @DisplayName("should handle multiple pet creations independently")
     void shouldHandleMultiplePetCreationsIndependently() {
       // Given
-      PetCreatedEvent event1 = new PetCreatedEvent("pet-1", "Dog Pet", PetType.DOG, Instant.now());
-      PetCreatedEvent event2 = new PetCreatedEvent("pet-2", "Cat Pet", PetType.CAT, Instant.now());
-      PetCreatedEvent event3 = new PetCreatedEvent("pet-3", "Dragon Pet", PetType.DRAGON, Instant.now());
+      PetCreatedEvent event1 = new PetCreatedEvent("pet-1", "Dog Pet", PetType.DOG, 0L, Instant.now());
+      PetCreatedEvent event2 = new PetCreatedEvent("pet-2", "Cat Pet", PetType.CAT, 0L, Instant.now());
+      PetCreatedEvent event3 = new PetCreatedEvent("pet-3", "Dragon Pet", PetType.DRAGON, 0L, Instant.now());
 
       // When
       projection.on(event1);
@@ -134,7 +134,7 @@ class PetStatusProjectionTest {
     void shouldReduceHungerWhenPetIsFed() {
       // Given: Create a pet first
       String petId = "pet-123";
-      projection.on(new PetCreatedEvent(petId, "Hungry Pet", PetType.DOG, Instant.now()));
+      projection.on(new PetCreatedEvent(petId, "Hungry Pet", PetType.DOG, 0L, Instant.now()));
 
       // When: Feed the pet
       projection.on(new PetFedEvent(petId, 15, Instant.now()));
@@ -149,7 +149,7 @@ class PetStatusProjectionTest {
     void shouldHandleMultipleFeedingsCorrectly() {
       // Given: Create a pet
       String petId = "pet-123";
-      projection.on(new PetCreatedEvent(petId, "Very Hungry Pet", PetType.CAT, Instant.now()));
+      projection.on(new PetCreatedEvent(petId, "Very Hungry Pet", PetType.CAT, 0L, Instant.now()));
 
       // When: Feed multiple times
       projection.on(new PetFedEvent(petId, 10, Instant.now()));
@@ -166,7 +166,7 @@ class PetStatusProjectionTest {
     void shouldNotReduceHungerBelowZero() {
       // Given: Create a pet
       String petId = "pet-123";
-      projection.on(new PetCreatedEvent(petId, "Overfed Pet", PetType.DRAGON, Instant.now()));
+      projection.on(new PetCreatedEvent(petId, "Overfed Pet", PetType.DRAGON, 0L, Instant.now()));
 
       // When: Feed with more than current hunger
       projection.on(new PetFedEvent(petId, 50, Instant.now())); // More than initial 30
@@ -196,7 +196,7 @@ class PetStatusProjectionTest {
     void shouldReturnPetStatusForExistingPet() {
       // Given
       String petId = "pet-123";
-      projection.on(new PetCreatedEvent(petId, "Test Pet", PetType.DOG, Instant.now()));
+      projection.on(new PetCreatedEvent(petId, "Test Pet", PetType.DOG, 0L, Instant.now()));
 
       // When
       PetStatusView view = projection.handle(new GetPetStatusQuery(petId));
@@ -223,7 +223,7 @@ class PetStatusProjectionTest {
     @Test
     @DisplayName("should handle DOG type correctly")
     void shouldHandleDogTypeCorrectly() {
-      projection.on(new PetCreatedEvent("pet-1", "Dog", PetType.DOG, Instant.now()));
+      projection.on(new PetCreatedEvent("pet-1", "Dog", PetType.DOG, 0L, Instant.now()));
       PetStatusView view = projection.handle(new GetPetStatusQuery("pet-1"));
       assertThat(view.getType()).isEqualTo(PetType.DOG);
     }
@@ -231,7 +231,7 @@ class PetStatusProjectionTest {
     @Test
     @DisplayName("should handle CAT type correctly")
     void shouldHandleCatTypeCorrectly() {
-      projection.on(new PetCreatedEvent("pet-2", "Cat", PetType.CAT, Instant.now()));
+      projection.on(new PetCreatedEvent("pet-2", "Cat", PetType.CAT, 0L, Instant.now()));
       PetStatusView view = projection.handle(new GetPetStatusQuery("pet-2"));
       assertThat(view.getType()).isEqualTo(PetType.CAT);
     }
@@ -239,7 +239,7 @@ class PetStatusProjectionTest {
     @Test
     @DisplayName("should handle DRAGON type correctly")
     void shouldHandleDragonTypeCorrectly() {
-      projection.on(new PetCreatedEvent("pet-3", "Dragon", PetType.DRAGON, Instant.now()));
+      projection.on(new PetCreatedEvent("pet-3", "Dragon", PetType.DRAGON, 0L, Instant.now()));
       PetStatusView view = projection.handle(new GetPetStatusQuery("pet-3"));
       assertThat(view.getType()).isEqualTo(PetType.DRAGON);
     }
@@ -254,7 +254,7 @@ class PetStatusProjectionTest {
     void shouldMaintainConsistentStateAcrossEventSequence() {
       // Given: A sequence of events
       String petId = "pet-123";
-      projection.on(new PetCreatedEvent(petId, "Consistent Pet", PetType.CAT, Instant.now()));
+      projection.on(new PetCreatedEvent(petId, "Consistent Pet", PetType.CAT, 0L, Instant.now()));
       projection.on(new PetFedEvent(petId, 5, Instant.now()));
       projection.on(new PetFedEvent(petId, 5, Instant.now()));
       projection.on(new PetFedEvent(petId, 10, Instant.now()));
@@ -274,7 +274,7 @@ class PetStatusProjectionTest {
     void shouldPreserveOtherStatsWhenHungerChanges() {
       // Given
       String petId = "pet-123";
-      projection.on(new PetCreatedEvent(petId, "Preserved Pet", PetType.DRAGON, Instant.now()));
+      projection.on(new PetCreatedEvent(petId, "Preserved Pet", PetType.DRAGON, 0L, Instant.now()));
 
       // When: Feed the pet
       projection.on(new PetFedEvent(petId, 10, Instant.now()));
