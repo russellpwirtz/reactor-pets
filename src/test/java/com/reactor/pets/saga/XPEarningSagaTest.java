@@ -86,7 +86,7 @@ class XPEarningSagaTest {
   void shouldEarnSurvivalXPOnTimePassedEvent() {
     fixture
         .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
-        .whenPublishingA(new TimePassedEvent(PET_ID, 3, 2, 1, 1L, 0.0, 1.0, NOW))
+        .whenPublishingA(new TimePassedEvent(PET_ID, 3, 2, 1, 1L, 0.0, 1.0, 0, NOW))
         .expectActiveSagas(1)
         .expectDispatchedCommandsMatching(
             exactSequenceOf(messageWithPayload(any(EarnXPCommand.class)), andNoMore()));
@@ -137,7 +137,7 @@ class XPEarningSagaTest {
     fixture
         .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         // First time tick with 1.5x multiplier
-        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 2, 1, 1L, 0.0, 1.5, NOW))
+        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 2, 1, 1L, 0.0, 1.5, 0, NOW))
         // Feed with the new multiplier
         .whenPublishingA(new PetFedEvent(PET_ID, 15, NOW))
         .expectActiveSagas(1)
@@ -153,7 +153,7 @@ class XPEarningSagaTest {
         .andThenAPublished(new PetFedEvent(PET_ID, 15, NOW))
         .andThenAPublished(new PetPlayedWithEvent(PET_ID, 10, 5, NOW))
         .andThenAPublished(new PetCleanedEvent(PET_ID, 10, NOW))
-        .whenPublishingA(new TimePassedEvent(PET_ID, 3, 2, 1, 1L, 0.0, 1.0, NOW))
+        .whenPublishingA(new TimePassedEvent(PET_ID, 3, 2, 1, 1L, 0.0, 1.0, 0, NOW))
         .expectActiveSagas(1)
         .expectDispatchedCommandsMatching(
             exactSequenceOf(messageWithPayload(any(EarnXPCommand.class)), andNoMore()));

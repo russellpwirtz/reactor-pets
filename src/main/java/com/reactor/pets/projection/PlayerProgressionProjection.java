@@ -2,6 +2,7 @@ package com.reactor.pets.projection;
 
 import com.reactor.pets.event.PetCreatedForPlayerEvent;
 import com.reactor.pets.event.PlayerInitializedEvent;
+import com.reactor.pets.event.TimePassedEvent;
 import com.reactor.pets.event.UpgradePurchasedEvent;
 import com.reactor.pets.event.XPEarnedEvent;
 import com.reactor.pets.event.XPSpentEvent;
@@ -38,6 +39,11 @@ public class PlayerProgressionProjection {
     view.setPrestigeLevel(0);
     view.setPermanentUpgrades(new HashSet<>());
     view.setLastUpdated(event.getTimestamp());
+    // Phase 7E: Initialize analytics fields
+    view.setTotalXPSpent(0);
+    view.setHighestXPMultiplier(1.0);
+    view.setXpEarnedLast10Ticks(0);
+    view.setTickCountLast10(0);
 
     playerProgressionRepository.save(view);
     log.info("Player initialized with {} starting XP", event.getStartingXP());
@@ -75,13 +81,16 @@ public class PlayerProgressionProjection {
         .ifPresent(
             view -> {
               view.setTotalXP(event.getNewTotalXP());
+              // Phase 7E: Track total XP spent
+              view.setTotalXPSpent(view.getTotalXPSpent() + event.getXpAmount());
               view.setLastUpdated(event.getTimestamp());
               playerProgressionRepository.save(view);
               log.info(
-                  "Player spent {} XP on '{}'. New total: {}",
+                  "Player spent {} XP on '{}'. New total: {}, Total spent: {}",
                   event.getXpAmount(),
                   event.getPurpose(),
-                  event.getNewTotalXP());
+                  event.getNewTotalXP(),
+                  view.getTotalXPSpent());
             });
   }
 
@@ -124,6 +133,29 @@ public class PlayerProgressionProjection {
                   "Player purchased upgrade: {}. Total upgrades: {}",
                   event.getUpgradeType(),
                   view.getPermanentUpgrades().size());
+            });
+  }
+
+  @EventHandler
+  @Transactional
+  public void on(TimePassedEvent event) {
+    // Phase 7E: Track highest XP multiplier across all pets
+    // Note: We need to know which player owns this pet. For now, we'll use PLAYER_1 (single-player)
+    String playerId = "PLAYER_1"; // TODO: Multi-player support would need pet-to-player mapping
+
+    playerProgressionRepository
+        .findById(playerId)
+        .ifPresent(
+            view -> {
+              if (event.getNewXpMultiplier() > view.getHighestXPMultiplier()) {
+                view.setHighestXPMultiplier(event.getNewXpMultiplier());
+                view.setLastUpdated(event.getTimestamp());
+                playerProgressionRepository.save(view);
+                log.debug(
+                    "New highest XP multiplier: {} (previous: {})",
+                    event.getNewXpMultiplier(),
+                    view.getHighestXPMultiplier());
+              }
             });
   }
 

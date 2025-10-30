@@ -32,6 +32,12 @@ public class PlayerProgressionView {
   private int prestigeLevel;
   private Instant lastUpdated;
 
+  // Phase 7E: XP Analytics
+  private long totalXPSpent; // Total XP spent on purchases
+  private double highestXPMultiplier; // Highest multiplier ever achieved
+  private long xpEarnedLast10Ticks; // XP earned in last 10 ticks (for rate calculation)
+  private int tickCountLast10; // Number of ticks in the tracking window
+
   @ElementCollection(fetch = FetchType.EAGER)
   @CollectionTable(name = "player_upgrades", joinColumns = @JoinColumn(name = "player_id"))
   @Column(name = "upgrade_type")

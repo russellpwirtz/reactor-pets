@@ -62,6 +62,10 @@ class PetCreationServiceTest {
         0, // totalPetsCreated
         0, // prestigeLevel
         Instant.now(),
+        0L, // Phase 7E: totalXPSpent
+        1.0, // Phase 7E: highestXPMultiplier
+        0L, // Phase 7E: xpEarnedLast10Ticks
+        0, // Phase 7E: tickCountLast10
         new HashSet<>());
 
     globalTimeView = new GlobalTimeView();

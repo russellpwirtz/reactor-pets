@@ -12,5 +12,6 @@ public class TimePassedEvent {
   long globalTick;
   double xpMultiplierChange; // Change in XP multiplier (0.0 if no change, +0.1 for milestone, etc.)
   double newXpMultiplier; // The new XP multiplier after this change
+  int newLowStatsTicks; // Phase 7E: Number of consecutive ticks with low stats (for multiplier decay)
   Instant timestamp;
 }

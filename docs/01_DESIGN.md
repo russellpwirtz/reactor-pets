@@ -58,19 +58,6 @@
 
 **Game Vision:** Idle/incremental game with roguelite mechanics. Early game requires active babysitting; mid-game unlocks automation and strategic trade-offs; late game features power-leveling and complex builds.
 
-**Available Commands:**
-- `create <name> <type>` - Create new pet (DOG, CAT, or DRAGON)
-- `feed <petId>` - Feed pet to reduce hunger (-20)
-- `play <petId>` - Play with pet (happiness +15, hunger +5)
-- `clean <petId>` - Clean pet (health +10)
-- `status <petId>` - View current pet status
-- `list` - Show all pets
-- `dashboard` - Show global statistics and all alive pets
-- `leaderboard [type]` - Show top 10 pets (AGE, HAPPINESS, HEALTH)
-- `history <petId> [limit]` - Show event history (default 10, max 50)
-- `help` - Display command reference
-- `exit` - Terminate application
-
 **Next Steps:** Phase 7A - XP System Foundation
 
 ### Progression Curve (Designed Play Pattern)
@@ -136,7 +123,6 @@ Post-prestige | Replay with bonuses              | 1.1x base  | Ramps faster due
 - Death mechanic when health reaches 0 (PetDiedEvent)
 - Business rules prevent commands on dead pets
 - GetAlivePetsQuery for filtering active pets
-- Visual indicators in CLI (🔴/🟡 for critical stats)
 - Idempotent time tick processing with sequence numbers
 
 ---
@@ -187,13 +173,7 @@ Post-prestige | Replay with bonuses              | 1.1x base  | Ramps faster due
    - Query alive pets and send tick to each in parallel
    - Improved logging for debugging
 
-4. **CLI Dashboard** ✅
-   - `dashboard` command shows global stats + all alive pets
-   - `leaderboard [type]` shows top 10 pets sorted by AGE, HAPPINESS, or HEALTH
-   - Color-coded health indicators (🔴 🟡) for critical stats
-   - Trophy emojis (🏆 🥈 🥉) for leaderboard rankings
-
-5. **Event Handler Optimizations** ✅
+4. **Event Handler Optimizations** ✅
    - `@ProcessingGroup("pet-statistics")` on PetStatisticsProjection
    - Configured tracking processors in `application.yml` with batch sizes
    - Separate processing groups for pet-status and pet-statistics

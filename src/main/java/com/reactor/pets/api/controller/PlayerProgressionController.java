@@ -1,6 +1,7 @@
 package com.reactor.pets.api.controller;
 
 import com.reactor.pets.api.dto.PlayerProgressionResponse;
+import com.reactor.pets.api.dto.XPAnalyticsResponse;
 import com.reactor.pets.query.GetAlivePetsQuery;
 import com.reactor.pets.query.GetPlayerProgressionQuery;
 import com.reactor.pets.query.PetStatusView;
@@ -61,12 +62,11 @@ public class PlayerProgressionController {
           .max()
           .orElse(1.0);
 
-      // Calculate total XP spent (lifetime earned - current XP)
-      long totalXPSpent = progression.getLifetimeXPEarned() - progression.getTotalXP();
+      // Phase 7E: Use tracked totalXPSpent from projection
+      long totalXPSpent = progression.getTotalXPSpent();
 
-      // For now, use current multiplier as highest (can be enhanced later to track
-      // historical max)
-      double highestMultiplier = Math.max(currentMultiplier, 1.0);
+      // Phase 7E: Use tracked highest multiplier
+      double highestMultiplier = progression.getHighestXPMultiplier();
 
       return ResponseEntity.ok(new PlayerProgressionResponse(
           progression.getPlayerId(),
@@ -80,5 +80,37 @@ public class PlayerProgressionController {
       log.error("Error fetching player progression", ex);
       return ResponseEntity.internalServerError().build();
     });
+  }
+
+  @GetMapping("/analytics/xp-rate")
+  @Operation(
+      summary = "Get XP analytics",
+      description = "Returns XP earning rate, highest multiplier, and spending statistics")
+  public CompletableFuture<ResponseEntity<XPAnalyticsResponse>> getXPAnalytics() {
+    log.debug("GET /api/analytics/xp-rate");
+
+    return queryGateway
+        .query(new GetPlayerProgressionQuery(PLAYER_ID), PlayerProgressionView.class)
+        .thenApply(progression -> {
+          if (progression == null) {
+            // Player not initialized yet, return zeros
+            return ResponseEntity.ok(XPAnalyticsResponse.from(0L, 0L, 0L, 1.0, 0.0));
+          }
+
+          // TODO Phase 7E: Calculate XP per minute based on recent earning rate
+          // For now, return 0.0 - will need to track XP earnings over time windows
+          double xpPerMinute = 0.0;
+
+          return ResponseEntity.ok(XPAnalyticsResponse.from(
+              progression.getTotalXP(),
+              progression.getLifetimeXPEarned(),
+              progression.getTotalXPSpent(),
+              progression.getHighestXPMultiplier(),
+              xpPerMinute));
+        })
+        .exceptionally(ex -> {
+          log.error("Error fetching XP analytics", ex);
+          return ResponseEntity.internalServerError().build();
+        });
   }
 }

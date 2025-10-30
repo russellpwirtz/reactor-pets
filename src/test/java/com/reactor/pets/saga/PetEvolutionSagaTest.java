@@ -52,7 +52,7 @@ class PetEvolutionSagaTest {
   void shouldTrackAgeOnTimePassedEvent() {
     fixture
         .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
-        .whenPublishingA(new TimePassedEvent(PET_ID, 3, 2, 1, 1L, 0.0, 0.0, NOW))
+        .whenPublishingA(new TimePassedEvent(PET_ID, 3, 2, 1, 1L, 0.0, 0.0, 0, NOW))
         .expectActiveSagas(1)
         .expectNoDispatchedCommands(); // Age 1 is not enough to evolve from EGG
   }
@@ -63,7 +63,7 @@ class PetEvolutionSagaTest {
     fixture
         .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         // Age pet to 5
-        .whenPublishingA(new TimePassedEvent(PET_ID, 15, 10, 5, 5L, 0.0, 0.0, NOW))
+        .whenPublishingA(new TimePassedEvent(PET_ID, 15, 10, 5, 5L, 0.0, 0.0, 0, NOW))
         .expectActiveSagas(1)
         .expectDispatchedCommandsMatching(
             exactSequenceOf(messageWithPayload(any(EvolvePetCommand.class)), andNoMore()));
@@ -75,12 +75,12 @@ class PetEvolutionSagaTest {
     fixture
         .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         // Evolve to BABY first
-        .andThenAPublished(new TimePassedEvent(PET_ID, 15, 10, 5, 5L, 0.0, 0.0, NOW))
+        .andThenAPublished(new TimePassedEvent(PET_ID, 15, 10, 5, 5L, 0.0, 0.0, 0, NOW))
         .andThenAPublished(
             new PetEvolvedEvent(
                 PET_ID, PetStage.EGG, PetStage.BABY, EvolutionPath.HEALTHY, "Hatched", NOW))
         // Age to 20 (15 more ticks)
-        .whenPublishingA(new TimePassedEvent(PET_ID, 45, 30, 15, 20L, 0.0, 0.0, NOW))
+        .whenPublishingA(new TimePassedEvent(PET_ID, 45, 30, 15, 20L, 0.0, 0.0, 0, NOW))
         .expectActiveSagas(1)
         .expectDispatchedCommandsMatching(
             exactSequenceOf(messageWithPayload(any(EvolvePetCommand.class)), andNoMore()));
@@ -92,11 +92,11 @@ class PetEvolutionSagaTest {
     // Setup: Create pet, evolve to BABY, then TEEN
     fixture
         .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
-        .andThenAPublished(new TimePassedEvent(PET_ID, 15, 10, 5, 5L, 0.0, 0.0, NOW))
+        .andThenAPublished(new TimePassedEvent(PET_ID, 15, 10, 5, 5L, 0.0, 0.0, 0, NOW))
         .andThenAPublished(
             new PetEvolvedEvent(
                 PET_ID, PetStage.EGG, PetStage.BABY, EvolutionPath.HEALTHY, "Hatched", NOW))
-        .andThenAPublished(new TimePassedEvent(PET_ID, 45, 30, 15, 20L, 0.0, 0.0, NOW))
+        .andThenAPublished(new TimePassedEvent(PET_ID, 45, 30, 15, 20L, 0.0, 0.0, 0, NOW))
         .andThenAPublished(
             new PetEvolvedEvent(
                 PET_ID, PetStage.BABY, PetStage.TEEN, EvolutionPath.HEALTHY, "Grew up", NOW))
@@ -104,10 +104,10 @@ class PetEvolutionSagaTest {
         .andThenAPublished(new PetCleanedEvent(PET_ID, 10, NOW))
         .andThenAPublished(new PetCleanedEvent(PET_ID, 10, NOW))
         // Age to 50 (30 more, with time ticks to build history)
-        .andThenAPublished(new TimePassedEvent(PET_ID, 30, 20, 10, 30L, 0.0, 0.0, NOW))
-        .andThenAPublished(new TimePassedEvent(PET_ID, 30, 20, 10, 40L, 0.0, 0.0, NOW))
-        .andThenAPublished(new TimePassedEvent(PET_ID, 30, 20, 10, 50L, 0.0, 0.0, NOW))
-        .whenPublishingA(new TimePassedEvent(PET_ID, 0, 0, 0, 50L, 0.0, 0.0, NOW)) // Trigger check at age 50
+        .andThenAPublished(new TimePassedEvent(PET_ID, 30, 20, 10, 30L, 0.0, 0.0, 0, NOW))
+        .andThenAPublished(new TimePassedEvent(PET_ID, 30, 20, 10, 40L, 0.0, 0.0, 0, NOW))
+        .andThenAPublished(new TimePassedEvent(PET_ID, 30, 20, 10, 50L, 0.0, 0.0, 0, NOW))
+        .whenPublishingA(new TimePassedEvent(PET_ID, 0, 0, 0, 50L, 0.0, 0.0, 0, NOW)) // Trigger check at age 50
         .expectActiveSagas(1)
         .expectDispatchedCommandsMatching(
             exactSequenceOf(messageWithPayload(any(EvolvePetCommand.class)), andNoMore()));
@@ -189,7 +189,7 @@ class PetEvolutionSagaTest {
             new PetEvolvedEvent(
                 PET_ID, PetStage.TEEN, PetStage.ADULT, EvolutionPath.HEALTHY, "Matured", NOW))
         // Try to age past adult stage
-        .whenPublishingA(new TimePassedEvent(PET_ID, 300, 200, 100, 150L, 0.0, 0.0, NOW))
+        .whenPublishingA(new TimePassedEvent(PET_ID, 300, 200, 100, 150L, 0.0, 0.0, 0, NOW))
         .expectActiveSagas(1)
         .expectNoDispatchedCommands(); // No further evolution
   }
@@ -202,12 +202,12 @@ class PetEvolutionSagaTest {
         // Keep pet healthy and happy
         .andThenAPublished(new PetCleanedEvent(PET_ID, 20, NOW)) // Health boost
         .andThenAPublished(new PetPlayedWithEvent(PET_ID, 20, 5, NOW)) // Happiness boost
-        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 2, 1, 1L, 0.0, 0.0, NOW))
-        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 2, 1, 2L, 0.0, 0.0, NOW))
-        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 2, 1, 3L, 0.0, 0.0, NOW))
-        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 2, 1, 4L, 0.0, 0.0, NOW))
+        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 2, 1, 1L, 0.0, 0.0, 0, NOW))
+        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 2, 1, 2L, 0.0, 0.0, 0, NOW))
+        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 2, 1, 3L, 0.0, 0.0, 0, NOW))
+        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 2, 1, 4L, 0.0, 0.0, 0, NOW))
         // Age to 5 to trigger evolution
-        .whenPublishingA(new TimePassedEvent(PET_ID, 3, 2, 1, 5L, 0.0, 0.0, NOW))
+        .whenPublishingA(new TimePassedEvent(PET_ID, 3, 2, 1, 5L, 0.0, 0.0, 0, NOW))
         .expectActiveSagas(1)
         .expectDispatchedCommandsMatching(
             exactSequenceOf(messageWithPayload(any(EvolvePetCommand.class)), andNoMore()));
@@ -220,14 +220,14 @@ class PetEvolutionSagaTest {
         .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
         // Neglect the pet - let health and happiness degrade
         .andThenAPublished(new PetHealthDeterioratedEvent(PET_ID, 40, "Hunger", NOW)) // Health to 60
-        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 5, 1, 1L, 0.0, 0.0, NOW)) // Happiness drops
+        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 5, 1, 1L, 0.0, 0.0, 0, NOW)) // Happiness drops
         .andThenAPublished(
             new PetHealthDeterioratedEvent(PET_ID, 30, "Starvation", NOW)) // Health to 30
-        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 5, 1, 2L, 0.0, 0.0, NOW))
-        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 5, 1, 3L, 0.0, 0.0, NOW))
-        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 5, 1, 4L, 0.0, 0.0, NOW))
+        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 5, 1, 2L, 0.0, 0.0, 0, NOW))
+        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 5, 1, 3L, 0.0, 0.0, 0, NOW))
+        .andThenAPublished(new TimePassedEvent(PET_ID, 3, 5, 1, 4L, 0.0, 0.0, 0, NOW))
         // Age to 5 to trigger evolution
-        .whenPublishingA(new TimePassedEvent(PET_ID, 3, 5, 1, 5L, 0.0, 0.0, NOW))
+        .whenPublishingA(new TimePassedEvent(PET_ID, 3, 5, 1, 5L, 0.0, 0.0, 0, NOW))
         .expectActiveSagas(1)
         .expectDispatchedCommandsMatching(
             exactSequenceOf(messageWithPayload(any(EvolvePetCommand.class)), andNoMore()));
@@ -238,12 +238,12 @@ class PetEvolutionSagaTest {
   void shouldNotEvolveBabyToTeenBeforeAge20() {
     fixture
         .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
-        .andThenAPublished(new TimePassedEvent(PET_ID, 15, 10, 5, 5L, 0.0, 0.0, NOW))
+        .andThenAPublished(new TimePassedEvent(PET_ID, 15, 10, 5, 5L, 0.0, 0.0, 0, NOW))
         .andThenAPublished(
             new PetEvolvedEvent(
                 PET_ID, PetStage.EGG, PetStage.BABY, EvolutionPath.HEALTHY, "Hatched", NOW))
         // Age to 19 (not quite 20 yet)
-        .whenPublishingA(new TimePassedEvent(PET_ID, 42, 28, 14, 19L, 0.0, 0.0, NOW))
+        .whenPublishingA(new TimePassedEvent(PET_ID, 42, 28, 14, 19L, 0.0, 0.0, 0, NOW))
         .expectActiveSagas(1)
         .expectNoDispatchedCommands(); // Should not evolve yet
   }
@@ -253,16 +253,16 @@ class PetEvolutionSagaTest {
   void shouldNotEvolveTeenToAdultBeforeAge50() {
     fixture
         .givenAPublished(new PetCreatedEvent(PET_ID, "Test Pet", PetType.DOG, 0L, NOW))
-        .andThenAPublished(new TimePassedEvent(PET_ID, 15, 10, 5, 5L, 0.0, 0.0, NOW))
+        .andThenAPublished(new TimePassedEvent(PET_ID, 15, 10, 5, 5L, 0.0, 0.0, 0, NOW))
         .andThenAPublished(
             new PetEvolvedEvent(
                 PET_ID, PetStage.EGG, PetStage.BABY, EvolutionPath.HEALTHY, "Hatched", NOW))
-        .andThenAPublished(new TimePassedEvent(PET_ID, 45, 30, 15, 20L, 0.0, 0.0, NOW))
+        .andThenAPublished(new TimePassedEvent(PET_ID, 45, 30, 15, 20L, 0.0, 0.0, 0, NOW))
         .andThenAPublished(
             new PetEvolvedEvent(
                 PET_ID, PetStage.BABY, PetStage.TEEN, EvolutionPath.HEALTHY, "Grew up", NOW))
         // Age to 49 (not quite 50 yet)
-        .whenPublishingA(new TimePassedEvent(PET_ID, 87, 58, 29, 49L, 0.0, 0.0, NOW))
+        .whenPublishingA(new TimePassedEvent(PET_ID, 87, 58, 29, 49L, 0.0, 0.0, 0, NOW))
         .expectActiveSagas(1)
         .expectNoDispatchedCommands(); // Should not evolve yet
   }

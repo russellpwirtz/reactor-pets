@@ -11,6 +11,7 @@ import type {
   EquippedItems,
   EquipmentInventory,
   EquipmentSlot,
+  XPAnalytics,
 } from '../types';
 
 class ApiError extends Error {
@@ -101,6 +102,9 @@ export const api = {
 
   // Progression
   getProgression: () => fetchApi<PlayerProgression>('/progression'),
+
+  // Phase 7E: Analytics
+  getXPAnalytics: () => fetchApi<XPAnalytics>('/analytics/xp-rate'),
 
   // Shop
   getShopItems: () => fetchApi<ShopItem[]>('/shop/equipment'),

@@ -8,6 +8,7 @@ import { StageDistribution } from '@/components/stats/stage-distribution';
 import { usePets } from '@/hooks/use-pets';
 import { Badge } from '@/components/ui/badge';
 import { XPCard } from '@/components/progression/xp-card';
+import { AnalyticsCard } from '@/components/progression/analytics-card';
 import { useProgression } from '@/hooks/use-progression';
 import { PermanentUpgradesCard } from '@/components/progression/permanent-upgrades-card';
 import { InventoryCard } from '@/components/equipment/inventory-card';
@@ -47,7 +48,10 @@ export default function HomePage() {
         </Card>
 
         {/* Player Progression */}
-        {progression && <XPCard {...progression} />}
+        <div className="grid md:grid-cols-2 gap-6">
+          {progression && <XPCard {...progression} />}
+          <AnalyticsCard />
+        </div>
 
         {/* Permanent Upgrades and Inventory */}
         <div className="grid md:grid-cols-2 gap-6">

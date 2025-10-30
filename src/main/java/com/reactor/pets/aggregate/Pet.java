@@ -74,6 +74,9 @@ public class Pet {
   private boolean isSick; // Whether the pet is currently sick
   private int lowHealthTicks; // Number of consecutive ticks with health < 30
 
+  // XP multiplier decay tracking
+  private int lowStatsTicks; // Number of consecutive ticks with any stat < 50
+
   // Helper method to get local age (pet's age in ticks since birth)
   public long getLocalAge() {
     return currentGlobalTick - birthGlobalTick;
@@ -277,6 +280,7 @@ public class Pet {
     this.maxEquipmentSlots = 0; // Eggs have no equipment slots
     this.isSick = false;
     this.lowHealthTicks = 0;
+    this.lowStatsTicks = 0;
   }
 
   @EventSourcingHandler
@@ -405,22 +409,16 @@ public class Pet {
     // Every 10 ticks of local age = 1 age unit
     int ageIncrease = (nextLocalAge % 10 == 0) ? 1 : 0;
 
-    // Calculate XP multiplier change
-    // Increases by +0.1x every 50 ticks of local age
-    double xpMultiplierChange = 0.0;
-    if (nextLocalAge % 50 == 0) {
-      xpMultiplierChange = 0.1;
-    }
-
-    // Check for care quality bonus: +0.05x if all stats >70 for this tick
-    // (Simplified: check current stats after this tick's changes)
+    // Calculate future stats for XP multiplier calculation
     int futureHunger = Math.min(100, this.hunger + hungerIncrease);
     int futureHappiness = Math.max(0, this.happiness - happinessDecrease);
-    if (futureHunger <= 30 && futureHappiness >= 70 && this.health >= 70) {
-      xpMultiplierChange += 0.05;
-    }
 
-    double newXpMultiplier = this.xpMultiplier + xpMultiplierChange;
+    // Phase 7E: Calculate XP multiplier change (refactored for readability)
+    XPMultiplierCalculation multiplierCalc =
+        calculateXPMultiplierChange(nextLocalAge, futureHunger, futureHappiness);
+    double xpMultiplierChange = multiplierCalc.change();
+    double newXpMultiplier = multiplierCalc.newValue();
+    int newLowStatsTicks = multiplierCalc.newLowStatsTicks();
 
     // Apply time passed event
     AggregateLifecycle.apply(
@@ -432,6 +430,7 @@ public class Pet {
             command.getGlobalTick(),
             xpMultiplierChange,
             newXpMultiplier,
+            newLowStatsTicks,
             Instant.now()));
 
     // Apply health regeneration from equipment (if any)
@@ -497,6 +496,7 @@ public class Pet {
     this.currentGlobalTick = event.getGlobalTick();
     this.lastTickSequence = event.getGlobalTick();
     this.xpMultiplier = event.getNewXpMultiplier();
+    this.lowStatsTicks = event.getNewLowStatsTicks(); // Phase 7E: Track low stats for decay
   }
 
   @EventSourcingHandler
@@ -669,4 +669,43 @@ public class Pet {
         .mapToDouble(item -> item.getModifier(modifier))
         .sum();
   }
+
+  /**
+   * Phase 7E: Calculate XP multiplier change based on age milestones, care quality, and decay.
+   */
+  private XPMultiplierCalculation calculateXPMultiplierChange(
+      long nextLocalAge, int futureHunger, int futureHappiness) {
+    // Increases by +0.1x every 50 ticks of local age
+    double xpMultiplierChange = 0.0;
+    if (nextLocalAge % 50 == 0) {
+      xpMultiplierChange = 0.1;
+    }
+
+    // Check for care quality bonus: +0.05x if all stats >70 for this tick
+    if (futureHunger <= 30 && futureHappiness >= 70 && this.health >= 70) {
+      xpMultiplierChange += 0.05;
+    }
+
+    // Phase 7E: Track low stats for multiplier decay
+    boolean hasLowStats = futureHunger > 50 || futureHappiness < 50 || this.health < 50;
+    int newLowStatsTicks = hasLowStats ? this.lowStatsTicks + 1 : 0;
+
+    // Phase 7E: Apply multiplier decay if stats have been low for 10+ consecutive ticks
+    if (newLowStatsTicks >= 10 && newLowStatsTicks % 10 == 0) {
+      xpMultiplierChange -= 0.05;
+    }
+
+    // Phase 7E: Apply multiplier cap at 5.0x
+    double newXpMultiplier = Math.min(5.0, this.xpMultiplier + xpMultiplierChange);
+
+    return new XPMultiplierCalculation(xpMultiplierChange, newXpMultiplier, newLowStatsTicks);
+  }
+
+  /**
+   * Helper record for XP multiplier calculation results.
+   */
+  private record XPMultiplierCalculation(
+      double change,
+      double newValue,
+      int newLowStatsTicks) { }
 }
