@@ -13,6 +13,7 @@ import { EquipmentSlots } from '@/components/equipment/equipment-slots';
 import { EquipmentInventoryDialog } from '@/components/equipment/equipment-inventory-dialog';
 import { usePetEquipment, useEquipmentInventory, useEquipItem, useUnequipItem } from '@/hooks/use-equipment';
 import { EquipmentSlot } from '@/lib/types';
+import BrainVisualizerPanel from '@/components/brain/BrainVisualizerPanel';
 
 export default function PetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -81,12 +82,17 @@ export default function PetDetailPage({ params }: { params: Promise<{ id: string
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="brain">Brain</TabsTrigger>
           <TabsTrigger value="equipment">Equipment</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
           <PetDetailView pet={pet} />
+        </TabsContent>
+
+        <TabsContent value="brain" className="mt-6">
+          <BrainVisualizerPanel petId={pet.petId} stage={pet.stage} isAlive={pet.alive} />
         </TabsContent>
 
         <TabsContent value="equipment" className="mt-6">

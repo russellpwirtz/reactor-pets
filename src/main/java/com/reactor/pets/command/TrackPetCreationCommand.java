@@ -2,6 +2,7 @@ package com.reactor.pets.command;
 
 import com.reactor.pets.aggregate.PetType;
 import lombok.Value;
+import org.axonframework.modelling.command.TargetAggregateIdentifier;
 
 /**
  * Command to track pet creation in the PlayerProgression aggregate.
@@ -9,6 +10,7 @@ import lombok.Value;
  */
 @Value
 public class TrackPetCreationCommand {
+  @TargetAggregateIdentifier
   String playerId;
   String petId;
   String petName;

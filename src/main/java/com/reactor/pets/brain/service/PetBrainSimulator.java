@@ -291,15 +291,41 @@ public class PetBrainSimulator {
                         .map(Cell::getStateUpdates)
                         .collect(Collectors.toList());
 
+        // Create ongoing stream with heartbeat to prevent completion
+        // Wrap each cell flux with error handling to prevent one cell from killing the stream
+        List<Flux<CellState>> resilientFluxes = cellFluxes.stream()
+                .map(flux -> flux
+                        .onErrorResume(error -> {
+                            log.error("Cell flux error for pet {}: {}", petId, error.getMessage());
+                            return Flux.empty();
+                        })
+                        .doOnComplete(() -> log.debug("Individual cell flux completed for pet {}", petId))
+                )
+                .collect(Collectors.toList());
+
+        Flux<List<CellState>> ongoingStream = Flux.merge(resilientFluxes)
+                .buffer(Duration.ofMillis(50)) // Batch updates every 50ms
+                .filter(list -> !list.isEmpty())
+                .mergeWith(
+                        // Heartbeat: emit empty list every 30 seconds to keep connection alive
+                        // This prevents the stream from completing if cells go quiet
+                        Flux.interval(Duration.ofSeconds(30))
+                                .map(tick -> List.<CellState>of())
+                                .filter(list -> !list.isEmpty()) // Filter out empty heartbeats
+                )
+                .onErrorContinue((error, obj) ->
+                        log.error("Error in brain stream for pet {}: {}", petId, error.getMessage()))
+                .doOnComplete(() ->
+                        log.warn("Brain stream completed unexpectedly for pet {}", petId));
+
         return Flux.concat(
                         // First, emit current state snapshot immediately
                         Flux.just(currentSnapshot),
-                        // Then stream ongoing updates
-                        Flux.merge(cellFluxes)
-                                .buffer(Duration.ofMillis(50)) // Batch updates every 50ms
-                                .filter(list -> !list.isEmpty()))
+                        // Then stream ongoing updates indefinitely
+                        ongoingStream)
                 .doFinally(
                         signalType -> {
+                            log.info("Brain stream finally block triggered for pet {} with signal: {}", petId, signalType);
                             // Client disconnected - decrement subscriber count
                             unsubscribeFromBrain(petId);
                         });
@@ -386,35 +412,84 @@ public class PetBrainSimulator {
     private void seedPatternForStage(Grid grid, PetStage stage) {
         int centerX = grid.getWidth() / 2;
         int centerY = grid.getHeight() / 2;
+        java.util.Random random = new java.util.Random();
 
-        // Simple center seed for all stages
-        // EGG will show growth from center
-        // Other stages will show immediate activity
-        Cell centerCell = grid.getCell(centerX, centerY);
-        CellState current = centerCell.getCurrentState();
+        // Seed multiple activation points based on stage
+        // More advanced stages get more initial activation points
+        int seedCount = switch (stage) {
+            case EGG -> grid.getWidth() / 4; // Sparse for egg
+            case BABY -> grid.getWidth() / 3;
+            case TEEN -> grid.getWidth() / 2;
+            case ADULT -> grid.getWidth() * 3 / 4; // Dense for adult
+        };
 
-        // Create new state with activation
-        CellState activeState =
-                CellState.builder()
-                        .cellId(current.getCellId())
-                        .x(current.getX())
-                        .y(current.getY())
-                        .activation(1.0)
-                        .refractoryCountdown(0)
-                        .lastFiredAt(System.currentTimeMillis())
-                        .timestamp(System.currentTimeMillis())
-                        .isFiring(true)
-                        .accumulatedInput(0.0)
-                        .dominantDirection(null)
-                        .layer(current.getLayer())
-                        .cellType(current.getCellType())
-                        .neuronPhase(current.getNeuronPhase())
-                        .phaseCountdown(0)
-                        .burstMode(false)
-                        .burstCount(0)
-                        .build();
+        // Activate cells in a distributed pattern
+        for (int i = 0; i < seedCount; i++) {
+            // Create multiple activation points distributed across the grid
+            int x;
+            int y;
 
-        centerCell.emitState(activeState);
+            if (i == 0) {
+                // Always activate center
+                x = centerX;
+                y = centerY;
+            } else {
+                // Distribute other points across quadrants
+                int quadrant = i % 4;
+                int offsetX = random.nextInt(grid.getWidth() / 4);
+                int offsetY = random.nextInt(grid.getHeight() / 4);
+
+                x = switch (quadrant) {
+                    case 0 -> centerX + offsetX; // Top-right
+                    case 1 -> centerX - offsetX; // Top-left
+                    case 2 -> centerX + offsetX; // Bottom-right
+                    case 3 -> centerX - offsetX; // Bottom-left
+                    default -> centerX;
+                };
+
+                y = switch (quadrant) {
+                    case 0, 1 -> centerY - offsetY; // Top half
+                    case 2, 3 -> centerY + offsetY; // Bottom half
+                    default -> centerY;
+                };
+            }
+
+            // Ensure coordinates are within bounds
+            x = Math.max(0, Math.min(grid.getWidth() - 1, x));
+            y = Math.max(0, Math.min(grid.getHeight() - 1, y));
+
+            Cell cell = grid.getCell(x, y);
+            CellState current = cell.getCurrentState();
+
+            // Create new state with activation
+            // Vary activation strength slightly
+            double activation = 0.7 + (random.nextDouble() * 0.3); // 0.7 to 1.0
+
+            CellState activeState =
+                    CellState.builder()
+                            .cellId(current.getCellId())
+                            .x(current.getX())
+                            .y(current.getY())
+                            .activation(activation)
+                            .refractoryCountdown(0)
+                            .lastFiredAt(System.currentTimeMillis())
+                            .timestamp(System.currentTimeMillis())
+                            .isFiring(true)
+                            .accumulatedInput(0.0)
+                            .dominantDirection(null)
+                            .layer(current.getLayer())
+                            .cellType(current.getCellType())
+                            .neuronPhase(current.getNeuronPhase())
+                            .phaseCountdown(0)
+                            .burstMode(false)
+                            .burstCount(0)
+                            .build();
+
+            cell.emitState(activeState);
+        }
+
+        log.info("Seeded {} activation points for {} stage ({}x{} grid)",
+                seedCount, stage, grid.getWidth(), grid.getHeight());
     }
 
     @PreDestroy

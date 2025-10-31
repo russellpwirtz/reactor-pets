@@ -49,9 +49,10 @@ public class Cell {
         this.cellId = String.format("cell-%d-%d", x, y);
 
         // Create a multicast sink (multiple subscribers allowed)
-        this.stateSink = Sinks.many().multicast().onBackpressureBuffer();
+        // Use directAllOrNothing() to prevent completion when subscribers disconnect
+        this.stateSink = Sinks.many().multicast().directAllOrNothing();
 
-        // Expose as hot flux
+        // Expose as hot flux that remains active even with 0 subscribers
         this.stateUpdates = stateSink.asFlux();
 
         // Initialize with resting state

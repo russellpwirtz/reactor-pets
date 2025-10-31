@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
 export default function PetsPage() {
-  const [aliveOnly, setAliveOnly] = useState(false);
+  const [aliveOnly, setAliveOnly] = useState(true);
 
   return (
     <div className="container mx-auto py-8">
