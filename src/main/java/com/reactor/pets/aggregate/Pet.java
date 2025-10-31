@@ -1,5 +1,6 @@
 package com.reactor.pets.aggregate;
 
+import com.reactor.pets.command.ApplyPermanentModifierCommand;
 import com.reactor.pets.command.CleanPetCommand;
 import com.reactor.pets.command.CreatePetCommand;
 import com.reactor.pets.command.EquipItemCommand;
@@ -17,13 +18,16 @@ import com.reactor.pets.domain.Consumable;
 import com.reactor.pets.domain.ConsumableCatalog;
 import com.reactor.pets.domain.EquipmentItem;
 import com.reactor.pets.domain.EquipmentSlot;
+import com.reactor.pets.domain.PermanentUpgrade;
 import com.reactor.pets.domain.StatModifier;
+import com.reactor.pets.domain.UpgradeType;
 import com.reactor.pets.event.ConsumableUseRequestedEvent;
 import com.reactor.pets.event.ConsumableUsedEvent;
 import com.reactor.pets.event.ItemEquipRequestedEvent;
 import com.reactor.pets.event.ItemEquippedEvent;
 import com.reactor.pets.event.ItemUnequipRequestedEvent;
 import com.reactor.pets.event.ItemUnequippedEvent;
+import com.reactor.pets.event.PermanentModifierAppliedEvent;
 import com.reactor.pets.event.PetBecameSickEvent;
 import com.reactor.pets.event.PetCleanedEvent;
 import com.reactor.pets.event.PetCreatedEvent;
@@ -46,7 +50,7 @@ import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.spring.stereotype.Aggregate;
 
-@Aggregate
+@Aggregate(snapshotTriggerDefinition = "petSnapshotTrigger")
 @NoArgsConstructor
 public class Pet {
 
@@ -69,6 +73,9 @@ public class Pet {
   // Equipment system fields
   private Map<EquipmentSlot, EquipmentItem> equippedItems; // Items currently equipped
   private int maxEquipmentSlots; // Number of slots available (based on stage)
+
+  // Permanent upgrade modifiers (account-wide upgrades applied to this pet)
+  private Map<UpgradeType, PermanentUpgrade> permanentModifiers; // Permanent upgrades applied
 
   // Sickness system fields
   private boolean isSick; // Whether the pet is currently sick
@@ -278,6 +285,7 @@ public class Pet {
     this.xpMultiplier = 1.0; // Start with 1.0x multiplier
     this.equippedItems = new HashMap<>();
     this.maxEquipmentSlots = 0; // Eggs have no equipment slots
+    this.permanentModifiers = new HashMap<>(); // Start with no permanent modifiers (saga will apply)
     this.isSick = false;
     this.lowHealthTicks = 0;
     this.lowStatsTicks = 0;
@@ -660,14 +668,55 @@ public class Pet {
     this.happiness = Math.max(0, this.happiness - event.getHappinessLoss());
   }
 
+  @CommandHandler
+  public void handle(ApplyPermanentModifierCommand command) {
+    // Validation
+    if (command.getUpgrade() == null) {
+      throw new IllegalArgumentException("Upgrade cannot be null");
+    }
+
+    // Check if this upgrade is already applied
+    if (this.permanentModifiers.containsKey(command.getUpgrade().getUpgradeType())) {
+      // Idempotent: silently ignore if already applied
+      return;
+    }
+
+    // Apply event
+    AggregateLifecycle.apply(
+        new PermanentModifierAppliedEvent(
+            this.petId,
+            command.getUpgrade(),
+            Instant.now()));
+  }
+
+  @EventSourcingHandler
+  public void on(PermanentModifierAppliedEvent event) {
+    if (this.permanentModifiers == null) {
+      this.permanentModifiers = new HashMap<>();
+    }
+    this.permanentModifiers.put(event.getUpgrade().getUpgradeType(), event.getUpgrade());
+  }
+
   /**
-   * Gets the total modifier value for a given stat from all equipped items.
+   * Gets the total modifier value for a given stat from all sources:
+   * equipment items and permanent upgrades.
    * Returns 0.0 if no modifiers are present for that stat.
    */
   private double getTotalModifier(StatModifier modifier) {
-    return equippedItems.values().stream()
+    // Equipment modifiers
+    double equipmentMod = equippedItems.values().stream()
         .mapToDouble(item -> item.getModifier(modifier))
         .sum();
+
+    // Permanent upgrade modifiers
+    double permanentMod = 0.0;
+    if (permanentModifiers != null) {
+      permanentMod = permanentModifiers.values().stream()
+          .mapToDouble(upgrade -> upgrade.getModifier(modifier))
+          .sum();
+    }
+
+    return equipmentMod + permanentMod;
   }
 
   /**
