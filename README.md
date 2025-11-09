@@ -39,6 +39,7 @@ A virtual pet application built with Axon Framework 4.x and Project Reactor, dem
 - Java 21+
 - Maven 3.x
 - Docker & Docker Compose
+- Node.js 24+ (for frontend)
 
 ## Quick Start
 
@@ -50,7 +51,7 @@ docker-compose up -d
 
 Verify Axon Server is running at http://localhost:8024 (GUI) and localhost:8124 (gRPC)
 
-### 2. Build & Run
+### 2. Build & Run Backend
 
 ```bash
 # Build
@@ -59,6 +60,26 @@ mvn clean package -DskipTests
 # Run the application
 mvn spring-boot:run
 ```
+
+The backend will start at http://localhost:8080
+
+### 3. Start Frontend
+
+```bash
+# Navigate to frontend directory
+cd reactor-pets-frontend
+
+# Create environment file (first time only)
+cp .env.local.example .env.local
+
+# Install dependencies
+yarn
+
+# Start development server
+npm run dev
+```
+
+The frontend will start at http://localhost:3000
 
 ## Testing
 
@@ -83,6 +104,17 @@ mvn clean verify
 ```
 
 ## Interfaces
+
+### Web Frontend (React/Next.js)
+
+URL: `http://localhost:3000`
+
+Interactive web interface featuring:
+- Visual pet display with 3D graphics
+- Real-time pet stats monitoring
+- Pet care actions (feed, play, clean)
+- Global statistics and leaderboards
+- Event history viewer
 
 ### REST API Endpoints
 
