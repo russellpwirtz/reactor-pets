@@ -2,16 +2,14 @@
 
 A virtual pet application built with Axon Framework 4.x and Project Reactor, demonstrating Event Sourcing, CQRS, Saga pattern, and reactive programming.
 
-## Technology Stack
-
-<img width="1087" height="554" alt="Screenshot 2025-11-09 at 11 42 22 AM" src="https://github.com/user-attachments/assets/deabdf43-b69c-4e4a-a1a4-d2e968fb8005" />
-
-
+<img width="1074" height="379" alt="Screenshot 2025-11-09 at 11 55 00 AM" src="https://github.com/user-attachments/assets/6741ab8d-65e4-4d8a-8dd3-55fc3dcdf0a6" />
+<img width="1072" height="555" alt="Screenshot 2025-11-09 at 11 56 49 AM" src="https://github.com/user-attachments/assets/0d604b2a-7b33-49a1-823b-ae413dd94880" />
+<img width="1079" height="691" alt="Screenshot 2025-11-09 at 11 55 33 AM" src="https://github.com/user-attachments/assets/341d7229-491c-4bc3-81d6-bb377a5e4928" />
+<img width="1076" height="510" alt="Screenshot 2025-11-09 at 11 55 25 AM" src="https://github.com/user-attachments/assets/c8375501-a2a7-4d2e-9004-fd6af021811e" />
 
 https://github.com/user-attachments/assets/ea902554-e95a-490e-9b3e-b7b0fac7ea9e
 
-
-
+## Technology Stack
 - **Java**: 21+
 - **Framework**: Spring Boot 3.2.0
 - **Event Sourcing/CQRS**: Axon Framework 4.9.1
