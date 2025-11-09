@@ -12,28 +12,6 @@ A virtual pet application built with Axon Framework 4.x and Project Reactor, dem
 - **Build**: Maven
 - **Code Quality**: Spotless, Checkstyle, SpotBugs, JaCoCo
 
-## Phase 6 Complete ✅ - REST API
-
-**Current features:**
-- Pet lifecycle with event sourcing (create, feed, play, clean)
-- Reactive time system with automatic stat degradation and parallel processing
-- Health deterioration and death mechanics
-- Pet evolution system with saga pattern
-- Evolution stages: EGG → BABY → TEEN → ADULT
-- Evolution paths: HEALTHY vs NEGLECTED based on care
-- ASCII art for different pet types and stages
-- Global statistics dashboard tracking all pets
-- Leaderboards by age, happiness, and health
-- PetManagerService for multi-pet management
-- Enhanced time tick with concurrency control
-- **REST API with full CRUD operations** (NEW - Phase 6)
-- **Swagger/OpenAPI documentation** (NEW - Phase 6)
-- **Global exception handling with standardized errors** (NEW - Phase 6)
-- **CORS configuration for frontend development** (NEW - Phase 6)
-- JPA persistence with H2 database for projections
-- Event history queries via EventStore
-- **117 passing tests** with comprehensive coverage
-
 ## Prerequisites
 
 - Java 21+
