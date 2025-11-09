@@ -4,6 +4,14 @@ A virtual pet application built with Axon Framework 4.x and Project Reactor, dem
 
 ## Technology Stack
 
+<img width="1087" height="554" alt="Screenshot 2025-11-09 at 11 42 22 AM" src="https://github.com/user-attachments/assets/deabdf43-b69c-4e4a-a1a4-d2e968fb8005" />
+
+
+
+https://github.com/user-attachments/assets/ea902554-e95a-490e-9b3e-b7b0fac7ea9e
+
+
+
 - **Java**: 21+
 - **Framework**: Spring Boot 3.2.0
 - **Event Sourcing/CQRS**: Axon Framework 4.9.1
