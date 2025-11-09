@@ -7,7 +7,7 @@ A virtual pet application built with Axon Framework 4.x and Project Reactor, dem
 <img width="1079" height="691" alt="Screenshot 2025-11-09 at 11 55 33 AM" src="https://github.com/user-attachments/assets/341d7229-491c-4bc3-81d6-bb377a5e4928" />
 <img width="1076" height="510" alt="Screenshot 2025-11-09 at 11 55 25 AM" src="https://github.com/user-attachments/assets/c8375501-a2a7-4d2e-9004-fd6af021811e" />
 
-https://github.com/user-attachments/assets/ea902554-e95a-490e-9b3e-b7b0fac7ea9e
+https://github.com/user-attachments/assets/0a3cd9c6-e28d-46fe-ab82-e6627195f87e
 
 ## Technology Stack
 - **Java**: 21+
